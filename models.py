@@ -1,18 +1,29 @@
-from database import db
-from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from sqlalchemy.orm import DeclarativeBase
 
-class User(UserMixin, db.Model):
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
+class Player(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256))
-    coins = db.Column(db.Integer, default=0)
+    currency = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Building counts
+    houses = db.Column(db.Integer, default=0)
+    farms = db.Column(db.Integer, default=0)
+    factories = db.Column(db.Integer, default=0)
 
-class Building(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    building_type = db.Column(db.String(50), nullable=False)
-    level = db.Column(db.Integer, default=1)
-    coins_per_second = db.Column(db.Float, default=0.1)
+    def calculate_offline_earnings(self):
+        """Calculate earnings while player was offline"""
+        time_diff = (datetime.utcnow() - self.last_login).total_seconds()
+        earnings_per_second = (
+            self.houses * 1 +    # 1 currency per house per second
+            self.farms * 2 +     # 2 currency per farm per second
+            self.factories * 5   # 5 currency per factory per second
+        )
+        return int(time_diff * earnings_per_second)

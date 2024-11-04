@@ -1,33 +1,35 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="game-container">
-    <div class="stats mb-3">
-        <h3>Coins: <span id="coinCount">0</span></h3>
+<!DOCTYPE html>
+<html data-bs-theme="dark">
+<head>
+    <title>Typing Civilization Builder</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <canvas id="gameCanvas" width="800" height="400"></canvas>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Resources</h5>
+                        <p>Currency: <span id="currency">{{ player.currency }}</span></p>
+                        <h5 class="card-title">Buildings</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">Houses: <span id="houses">{{ player.houses }}</span></li>
+                            <li class="list-group-item">Farms: <span id="farms">{{ player.farms }}</span></li>
+                            <li class="list-group-item">Factories: <span id="factories">{{ player.factories }}</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <canvas id="gameCanvas"></canvas>
-    
-    <div class="building-options">
-        <div class="building-card">
-            <img src="{{ url_for('static', filename='assets/house.svg') }}" alt="House">
-            <p>House (10 coins)</p>
-            <button class="btn btn-secondary" onclick="selectBuilding('house')">Build</button>
-        </div>
-        <div class="building-card">
-            <img src="{{ url_for('static', filename='assets/farm.svg') }}" alt="Farm">
-            <p>Farm (50 coins)</p>
-            <button class="btn btn-secondary" onclick="selectBuilding('farm')">Build</button>
-        </div>
-        <div class="building-card">
-            <img src="{{ url_for('static', filename='assets/castle.svg') }}" alt="Castle">
-            <p>Castle (200 coins)</p>
-            <button class="btn btn-secondary" onclick="selectBuilding('castle')">Build</button>
-        </div>
-    </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-<script src="{{ url_for('static', filename='js/audio.js') }}"></script>
-<script src="{{ url_for('static', filename='js/game.js') }}"></script>
-{% endblock %}
+    <script src="{{ url_for('static', filename='js/audio.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
+</body>
+</html>
