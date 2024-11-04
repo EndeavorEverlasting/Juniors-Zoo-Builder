@@ -23,7 +23,7 @@ if __name__ == '__main__':
         # Create initial player if doesn't exist
         player = Player.query.first()
         if not player:
-            player = Player(username="player1")
+            player = Player(username="player1", currency=100)  # Start with 100 currency
             db.session.add(player)
             db.session.commit()
 
@@ -35,6 +35,11 @@ def game():
     # Calculate offline earnings
     offline_earnings = player.calculate_offline_earnings()
     player.currency += offline_earnings
+    
+    # Ensure minimum currency for new players
+    if player.currency < 100:
+        player.currency = 100
+        
     player.last_login = datetime.utcnow()
     db.session.commit()
     
@@ -46,7 +51,7 @@ def game():
 def get_game_state():
     player = Player.query.first()
     return jsonify({
-        'currency': player.currency,
+        'currency': max(player.currency, 100),  # Ensure minimum currency
         'houses': player.houses,
         'farms': player.farms,
         'factories': player.factories

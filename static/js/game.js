@@ -1,9 +1,9 @@
 let gameState = {
-    currency: 0,
+    currency: 100, // Start with some initial currency
     buildings: {
-        house: { count: 0, cost: 100, word: 'BUILD' },
-        farm: { count: 0, cost: 250, word: 'FARM' },
-        factory: { count: 0, cost: 500, word: 'INDUSTRY' }
+        house: { count: 0, cost: 100, word: 'BUILD', income: 1 },
+        farm: { count: 0, cost: 250, word: 'FARM', income: 2 },
+        factory: { count: 0, cost: 500, word: 'INDUSTRY', income: 5 }
     },
     currentWord: '',
     typingProgress: ''
@@ -11,8 +11,8 @@ let gameState = {
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const typingHint = document.getElementById('typing-hint');
 
-// Adjust canvas resolution to match display size
 function resizeCanvas() {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
@@ -23,16 +23,16 @@ function resizeCanvas() {
     }
 }
 
-// Initialize game state from server
 async function initGameState() {
     try {
         const response = await fetch('/get_game_state');
         const data = await response.json();
-        gameState.currency = data.currency;
+        gameState.currency = Math.max(data.currency, 100); // Ensure minimum starting currency
         gameState.buildings.house.count = data.houses;
         gameState.buildings.farm.count = data.farms;
         gameState.buildings.factory.count = data.factories;
         updateDisplay();
+        updateAvailableBuildings();
     } catch (error) {
         console.error('Failed to initialize game state:', error);
     }
@@ -43,18 +43,46 @@ function updateDisplay() {
     document.getElementById('houses').textContent = gameState.buildings.house.count;
     document.getElementById('farms').textContent = gameState.buildings.farm.count;
     document.getElementById('factories').textContent = gameState.buildings.factory.count;
+    updateTypingHint();
+}
+
+function updateTypingHint() {
+    if (!gameState.currentWord) {
+        let availableBuildings = [];
+        for (const [type, building] of Object.entries(gameState.buildings)) {
+            if (gameState.currency >= building.cost) {
+                availableBuildings.push(`Type "${building.word}" for a ${type} (${building.cost} coins)`);
+            }
+        }
+        typingHint.textContent = availableBuildings.length > 0 
+            ? availableBuildings[0] // Show only one hint at a time for clarity
+            : 'Earn more coins to build!';
+    } else {
+        typingHint.textContent = `Type: ${gameState.currentWord} (Progress: ${gameState.typingProgress})`;
+    }
+}
+
+function updateAvailableBuildings() {
+    const buildingItems = document.querySelectorAll('.building-item');
+    buildingItems.forEach(item => {
+        const buildingWord = item.querySelector('.typing-word').textContent;
+        const building = Object.values(gameState.buildings).find(b => b.word === buildingWord);
+        if (building && gameState.currency < building.cost) {
+            item.style.opacity = '0.5';
+        } else {
+            item.style.opacity = '1';
+        }
+    });
 }
 
 function handleKeyPress(event) {
     const key = event.key.toUpperCase();
     
-    // Initialize audio context on first interaction
     if (typeof audioContext === 'undefined') {
         initAudioContext();
     }
     
     if (!gameState.currentWord) {
-        // Start new word if none is active
         for (const [buildingType, building] of Object.entries(gameState.buildings)) {
             if (building.word.startsWith(key) && gameState.currency >= building.cost) {
                 gameState.currentWord = building.word;
@@ -64,14 +92,12 @@ function handleKeyPress(event) {
             }
         }
     } else {
-        // Continue current word
         const nextChar = gameState.currentWord[gameState.typingProgress.length];
         if (key === nextChar) {
             gameState.typingProgress += key;
             playCorrectKeySound();
             
             if (gameState.typingProgress === gameState.currentWord) {
-                // Word completed
                 for (const [buildingType, building] of Object.entries(gameState.buildings)) {
                     if (building.word === gameState.currentWord) {
                         gameState.currency -= building.cost;
@@ -79,7 +105,6 @@ function handleKeyPress(event) {
                         playBuildingComplete();
                         animateBuilding(buildingType);
                         
-                        // Update server
                         fetch('/update_progress', {
                             method: 'POST',
                             headers: {
@@ -105,40 +130,60 @@ function handleKeyPress(event) {
     }
     
     updateDisplay();
+    updateAvailableBuildings();
+}
+
+function drawBackground() {
+    // Draw sky gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#1a237e');
+    gradient.addColorStop(1, '#303f9f');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw ground
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
 }
 
 function gameLoop() {
-    // Resize canvas if needed
     resizeCanvas();
     
-    // Clear canvas
+    // Clear and draw background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
     
-    // Draw current word and progress
+    // Draw current word
     if (gameState.currentWord) {
-        const fontSize = Math.min(canvas.width / 20, 36);
-        ctx.font = `${fontSize}px Arial`;
+        const fontSize = Math.min(canvas.width / 15, 48);
+        ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Draw word shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillText(gameState.currentWord, canvas.width/2 + 2, canvas.height/3 + 2);
         
         // Draw word outline
         ctx.fillStyle = '#666666';
-        ctx.fillText(gameState.currentWord, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(gameState.currentWord, canvas.width/2, canvas.height/3);
         
-        // Draw progress in green
+        // Draw progress in bright color
         ctx.fillStyle = '#4CAF50';
+        const progressText = gameState.typingProgress + '_';
         ctx.fillText(
-            gameState.typingProgress + gameState.currentWord.slice(gameState.typingProgress.length),
-            canvas.width / 2,
-            canvas.height / 2
+            progressText,
+            canvas.width/2 - ((gameState.currentWord.length - progressText.length) * fontSize/4),
+            canvas.height/3
         );
     }
     
     // Passive income
     gameState.currency += (
-        gameState.buildings.house.count * 1 +
-        gameState.buildings.farm.count * 2 +
-        gameState.buildings.factory.count * 5
-    ) / 60;  // Per second divided by 60 for smooth animation
+        gameState.buildings.house.count * gameState.buildings.house.income +
+        gameState.buildings.farm.count * gameState.buildings.farm.income +
+        gameState.buildings.factory.count * gameState.buildings.factory.income
+    ) / 60;
     
     updateDisplay();
     requestAnimationFrame(gameLoop);
@@ -148,7 +193,7 @@ function gameLoop() {
 window.addEventListener('load', () => {
     resizeCanvas();
     initGameState();
+    gameLoop();
 });
 
 document.addEventListener('keypress', handleKeyPress);
-gameLoop();

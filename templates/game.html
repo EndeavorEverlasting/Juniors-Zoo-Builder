@@ -9,19 +9,44 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-8">
-                <canvas id="gameCanvas" width="800" height="400"></canvas>
+                <div class="canvas-container">
+                    <canvas id="gameCanvas" width="800" height="400"></canvas>
+                    <div id="typing-hint" class="typing-hint">Start typing to build!</div>
+                </div>
             </div>
             <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h3 class="card-title text-center">Resources</h3>
+                        <div class="currency-display">
+                            <h4>Currency: <span id="currency" class="badge bg-warning">{{ player.currency }}</span></h4>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Resources</h5>
-                        <p>Currency: <span id="currency">{{ player.currency }}</span></p>
-                        <h5 class="card-title">Buildings</h5>
-                        <ul class="list-group">
-                            <li class="list-group-item">Houses: <span id="houses">{{ player.houses }}</span></li>
-                            <li class="list-group-item">Farms: <span id="farms">{{ player.farms }}</span></li>
-                            <li class="list-group-item">Factories: <span id="factories">{{ player.factories }}</span></li>
-                        </ul>
+                        <h3 class="card-title text-center">Available Buildings</h3>
+                        <div class="building-list">
+                            <div class="building-item">
+                                <h5>House</h5>
+                                <p>Type "<span class="typing-word">BUILD</span>" (Cost: 100)</p>
+                                <p>Count: <span id="houses" class="badge bg-success">{{ player.houses }}</span></p>
+                                <small class="text-muted">Earns 1 currency per second</small>
+                            </div>
+                            <div class="building-item">
+                                <h5>Farm</h5>
+                                <p>Type "<span class="typing-word">FARM</span>" (Cost: 250)</p>
+                                <p>Count: <span id="farms" class="badge bg-warning">{{ player.farms }}</span></p>
+                                <small class="text-muted">Earns 2 currency per second</small>
+                            </div>
+                            <div class="building-item">
+                                <h5>Factory</h5>
+                                <p>Type "<span class="typing-word">INDUSTRY</span>" (Cost: 500)</p>
+                                <p>Count: <span id="factories" class="badge bg-danger">{{ player.factories }}</span></p>
+                                <small class="text-muted">Earns 5 currency per second</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
