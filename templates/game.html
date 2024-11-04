@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="game-container">
+    <div class="stats mb-3">
+        <h3>Coins: <span id="coinCount">0</span></h3>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="building-options">
+        <div class="building-card">
+            <img src="{{ url_for('static', filename='assets/house.svg') }}" alt="House">
+            <p>House (10 coins)</p>
+            <button class="btn btn-secondary" onclick="selectBuilding('house')">Build</button>
+        </div>
+        <div class="building-card">
+            <img src="{{ url_for('static', filename='assets/farm.svg') }}" alt="Farm">
+            <p>Farm (50 coins)</p>
+            <button class="btn btn-secondary" onclick="selectBuilding('farm')">Build</button>
+        </div>
+        <div class="building-card">
+            <img src="{{ url_for('static', filename='assets/castle.svg') }}" alt="Castle">
+            <p>Castle (200 coins)</p>
+            <button class="btn btn-secondary" onclick="selectBuilding('castle')">Build</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script src="{{ url_for('static', filename='js/audio.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}
