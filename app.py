@@ -42,6 +42,16 @@ def game():
                          player=player,
                          offline_earnings=offline_earnings)
 
+@app.route('/get_game_state')
+def get_game_state():
+    player = Player.query.first()
+    return jsonify({
+        'currency': player.currency,
+        'houses': player.houses,
+        'farms': player.farms,
+        'factories': player.factories
+    })
+
 @app.route('/update_progress', methods=['POST'])
 def update_progress():
     player = Player.query.first()

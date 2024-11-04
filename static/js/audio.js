@@ -1,6 +1,14 @@
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioContext;
+
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
 
 function playCorrectKeySound() {
+    if (!audioContext) return;
+    
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -16,6 +24,8 @@ function playCorrectKeySound() {
 }
 
 function playWrongKeySound() {
+    if (!audioContext) return;
+    
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
@@ -31,6 +41,8 @@ function playWrongKeySound() {
 }
 
 function playBuildingComplete() {
+    if (!audioContext) return;
+    
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
