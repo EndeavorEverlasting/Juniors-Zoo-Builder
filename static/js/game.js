@@ -6,12 +6,18 @@ let gameState = {
         factory: { count: 0, cost: 500, word: 'INDUSTRY', income: 5 }
     },
     currentWord: '',
-    typingProgress: ''
+    typingProgress: '',
+    hasStartedTyping: false
 };
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const typingHint = document.getElementById('typing-hint');
+const keyboardIcon = document.getElementById('keyboard-icon');
+const nextKeyHint = document.getElementById('next-key-hint');
+const nextKey = document.getElementById('next-key');
+const floatingGuide = document.getElementById('floating-guide');
+const bounceArrow = document.getElementById('bounce-arrow');
 
 function resizeCanvas() {
     const displayWidth = canvas.clientWidth;
@@ -23,11 +29,28 @@ function resizeCanvas() {
     }
 }
 
+function showTypingStarted() {
+    if (!gameState.hasStartedTyping) {
+        gameState.hasStartedTyping = true;
+        keyboardIcon.classList.add('visible');
+        typingHint.style.animation = 'none';
+        floatingGuide.style.display = 'block';
+        bounceArrow.style.display = 'block';
+        
+        // Position the floating guide and arrow
+        const canvasRect = canvas.getBoundingClientRect();
+        floatingGuide.style.top = `${canvasRect.top + 100}px`;
+        floatingGuide.style.left = `${canvasRect.left + canvasRect.width/2 - 100}px`;
+        bounceArrow.style.top = `${canvasRect.top + 150}px`;
+        bounceArrow.style.left = `${canvasRect.left + canvasRect.width/2 - 20}px`;
+    }
+}
+
 async function initGameState() {
     try {
         const response = await fetch('/get_game_state');
         const data = await response.json();
-        gameState.currency = Math.max(data.currency, 100); // Ensure minimum starting currency
+        gameState.currency = Math.max(data.currency, 100);
         gameState.buildings.house.count = data.houses;
         gameState.buildings.farm.count = data.farms;
         gameState.buildings.factory.count = data.factories;
@@ -54,11 +77,16 @@ function updateTypingHint() {
                 availableBuildings.push(`Type "${building.word}" for a ${type} (${building.cost} coins)`);
             }
         }
-        typingHint.textContent = availableBuildings.length > 0 
-            ? availableBuildings[0] // Show only one hint at a time for clarity
-            : 'Earn more coins to build!';
+        typingHint.textContent = gameState.hasStartedTyping ? 
+            (availableBuildings.length > 0 ? availableBuildings[0] : 'Earn more coins to build!') :
+            'Press any key to start building!';
+            
+        nextKeyHint.classList.remove('visible');
     } else {
-        typingHint.textContent = `Type: ${gameState.currentWord} (Progress: ${gameState.typingProgress})`;
+        const nextChar = gameState.currentWord[gameState.typingProgress.length];
+        nextKeyHint.classList.add('visible');
+        nextKey.textContent = nextChar;
+        typingHint.textContent = `Type: ${gameState.currentWord}`;
     }
 }
 
@@ -81,6 +109,8 @@ function handleKeyPress(event) {
     if (typeof audioContext === 'undefined') {
         initAudioContext();
     }
+
+    showTypingStarted();
     
     if (!gameState.currentWord) {
         for (const [buildingType, building] of Object.entries(gameState.buildings)) {
@@ -149,33 +179,39 @@ function drawBackground() {
 function gameLoop() {
     resizeCanvas();
     
-    // Clear and draw background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     
-    // Draw current word
     if (gameState.currentWord) {
-        const fontSize = Math.min(canvas.width / 15, 48);
+        const fontSize = Math.min(canvas.width / 10, 64); // Larger font size
         ctx.font = `bold ${fontSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        
+        // Draw glowing effect
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(0, 255, 0, 0.5)';
         
         // Draw word shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillText(gameState.currentWord, canvas.width/2 + 2, canvas.height/3 + 2);
         
-        // Draw word outline
+        // Draw remaining letters
         ctx.fillStyle = '#666666';
         ctx.fillText(gameState.currentWord, canvas.width/2, canvas.height/3);
         
-        // Draw progress in bright color
+        // Draw typed letters in green
         ctx.fillStyle = '#4CAF50';
-        const progressText = gameState.typingProgress + '_';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = '#4CAF50';
         ctx.fillText(
-            progressText,
-            canvas.width/2 - ((gameState.currentWord.length - progressText.length) * fontSize/4),
+            gameState.typingProgress,
+            canvas.width/2 - ((gameState.currentWord.length - gameState.typingProgress.length) * fontSize/4),
             canvas.height/3
         );
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
     }
     
     // Passive income
