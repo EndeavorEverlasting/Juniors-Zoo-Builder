@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, jsonify, request, session
+from flask import Flask, render_template, jsonify, request
 from datetime import datetime
 from models import db, Player
 
@@ -8,6 +8,8 @@ app = Flask(__name__)
 # Configuration
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "dev_key"
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -16,16 +18,15 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 # Initialize the database
 db.init_app(app)
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        
-        # Create initial player if doesn't exist
-        player = Player.query.first()
-        if not player:
-            player = Player(username="player1", currency=100)  # Start with 100 currency
-            db.session.add(player)
-            db.session.commit()
+with app.app_context():
+    db.create_all()
+    
+    # Create initial player if doesn't exist
+    player = Player.query.first()
+    if not player:
+        player = Player(username="player1", currency=100)
+        db.session.add(player)
+        db.session.commit()
 
 @app.route('/')
 def game():
@@ -39,7 +40,7 @@ def game():
     # Ensure minimum currency for new players
     if player.currency < 100:
         player.currency = 100
-        
+    
     player.last_login = datetime.utcnow()
     db.session.commit()
     
@@ -51,7 +52,7 @@ def game():
 def get_game_state():
     player = Player.query.first()
     return jsonify({
-        'currency': max(player.currency, 100),  # Ensure minimum currency
+        'currency': max(player.currency, 100),
         'houses': player.houses,
         'farms': player.farms,
         'factories': player.factories

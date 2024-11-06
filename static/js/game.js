@@ -8,10 +8,10 @@ let gameState = {
     currentWord: '',
     typingProgress: '',
     hasStartedTyping: false,
-    buildingGrid: [], // Store building positions
-    wrongChar: null, // Track wrong character for visual feedback
-    gridSize: { rows: 3, cols: 8 }, // Grid configuration
-    nextGridPos: { row: 0, col: 0 } // Next available grid position
+    buildingGrid: [],
+    wrongChar: null,
+    gridSize: { rows: 3, cols: 8 },
+    nextGridPos: { row: 0, col: 0 }
 };
 
 const canvas = document.getElementById('gameCanvas');
@@ -26,6 +26,19 @@ const bounceArrow = document.getElementById('bounce-arrow');
 // Animation properties
 const GRID_CELL_SIZE = 80;
 const BUILDING_SIZE = 60;
+
+function updateAvailableBuildings() {
+    const buildingItems = document.querySelectorAll('.building-item');
+    buildingItems.forEach(item => {
+        const buildingWord = item.querySelector('.typing-word').textContent;
+        const building = Object.values(gameState.buildings).find(b => b.word === buildingWord);
+        if (building && gameState.currency < building.cost) {
+            item.style.opacity = '0.5';
+        } else {
+            item.style.opacity = '1';
+        }
+    });
+}
 
 function resizeCanvas() {
     const displayWidth = canvas.clientWidth;
@@ -43,9 +56,8 @@ function showTypingStarted() {
         keyboardIcon.classList.add('visible');
         typingHint.style.animation = 'none';
         
-        // Move guide to top-right corner
         floatingGuide.style.display = 'block';
-        floatingGuide.style.top = '20px';
+        floatingGuide.style.top = '80px';
         floatingGuide.style.right = '20px';
         floatingGuide.style.left = 'auto';
         
@@ -68,16 +80,18 @@ function getNextGridPosition() {
 
 function createParticles(x, y) {
     const particles = [];
-    for (let i = 0; i < 20; i++) {
-        const angle = (Math.PI * 2 * i) / 20;
-        const speed = 2 + Math.random() * 2;
+    const colors = ['#FFD700', '#FFA500', '#FF69B4', '#00FF00', '#40E0D0'];
+    for (let i = 0; i < 30; i++) {
+        const angle = (Math.PI * 2 * i) / 30;
+        const speed = 3 + Math.random() * 3;
         particles.push({
             x,
             y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             life: 1,
-            color: '#FFD700'
+            size: 3 + Math.random() * 3,
+            color: colors[Math.floor(Math.random() * colors.length)]
         });
     }
     return particles;
@@ -132,7 +146,6 @@ function updateDisplay() {
     const newValue = Math.floor(gameState.currency);
     
     if (oldValue !== newValue) {
-        // Animate currency change
         const diff = newValue - oldValue;
         if (diff < 0) {
             showFloatingText(canvas.width/2, canvas.height/2, diff.toString(), '#ff4444');
@@ -193,7 +206,6 @@ function updateTypingHint() {
         nextKeyHint.classList.add('visible');
         nextKey.textContent = nextChar;
         
-        // Show progress and highlight wrong character if any
         let displayText = gameState.typingProgress;
         if (gameState.wrongChar) {
             displayText += `<span class="wrong-letter">${gameState.wrongChar}</span>`;
@@ -236,16 +248,13 @@ function handleKeyPress(event) {
             if (gameState.typingProgress === gameState.currentWord) {
                 for (const [buildingType, building] of Object.entries(gameState.buildings)) {
                     if (building.word === gameState.currentWord) {
-                        const oldCurrency = gameState.currency;
                         gameState.currency -= building.cost;
                         building.count++;
                         playBuildingComplete();
                         
-                        // Add building with particles
                         const particles = createParticles(canvas.width/2, canvas.height/2);
                         addBuilding(buildingType, particles);
                         
-                        // Show currency spent
                         showFloatingText(canvas.width/2, canvas.height/2, `-${building.cost}`, '#ff4444');
                         
                         fetch('/update_progress', {
@@ -278,29 +287,25 @@ function handleKeyPress(event) {
 }
 
 function drawBackground() {
-    // Draw sky gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, '#1a237e');
     gradient.addColorStop(1, '#303f9f');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Draw ground
     ctx.fillStyle = '#2e7d32';
     ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
 }
 
 function drawBuildings() {
     gameState.buildingGrid.forEach((building, index) => {
-        // Update building animation
         if (building.scale < 1) {
-            building.scale += 0.05;
+            building.scale += 0.03;
         }
         if (building.opacity < 1) {
-            building.opacity += 0.05;
+            building.opacity += 0.03;
         }
         
-        // Draw building
         ctx.save();
         ctx.globalAlpha = building.opacity;
         ctx.translate(building.x + BUILDING_SIZE/2, building.y + BUILDING_SIZE/2);
@@ -309,29 +314,43 @@ function drawBuildings() {
         const color = getBuildingColor(building.type);
         ctx.fillStyle = color;
         
-        // Draw building shape
-        ctx.beginPath();
         switch(building.type) {
             case 'house':
+                // Draw house (simple house shape)
+                ctx.beginPath();
                 ctx.moveTo(-BUILDING_SIZE/2, BUILDING_SIZE/2);
+                ctx.lineTo(-BUILDING_SIZE/2, 0);
                 ctx.lineTo(0, -BUILDING_SIZE/2);
+                ctx.lineTo(BUILDING_SIZE/2, 0);
                 ctx.lineTo(BUILDING_SIZE/2, BUILDING_SIZE/2);
+                ctx.closePath();
+                ctx.fill();
                 break;
+                
             case 'farm':
-                ctx.rect(-BUILDING_SIZE/2, -BUILDING_SIZE/4, BUILDING_SIZE, BUILDING_SIZE * 0.75);
-                ctx.moveTo(-BUILDING_SIZE/2, -BUILDING_SIZE/4);
+                // Draw farm (barn shape)
+                ctx.beginPath();
+                ctx.moveTo(-BUILDING_SIZE/2, BUILDING_SIZE/2);
+                ctx.lineTo(-BUILDING_SIZE/2, 0);
                 ctx.lineTo(0, -BUILDING_SIZE/2);
-                ctx.lineTo(BUILDING_SIZE/2, -BUILDING_SIZE/4);
+                ctx.lineTo(BUILDING_SIZE/2, 0);
+                ctx.lineTo(BUILDING_SIZE/2, BUILDING_SIZE/2);
+                ctx.closePath();
+                ctx.fill();
+                // Add some details
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(-BUILDING_SIZE/4, 0, BUILDING_SIZE/2, BUILDING_SIZE/2);
                 break;
+                
             case 'factory':
-                ctx.rect(-BUILDING_SIZE/2, -BUILDING_SIZE/4, BUILDING_SIZE, BUILDING_SIZE * 0.75);
-                ctx.rect(-BUILDING_SIZE/4, -BUILDING_SIZE/2, BUILDING_SIZE/4, BUILDING_SIZE/4);
+                // Draw factory (industrial building with chimney)
+                ctx.fillRect(-BUILDING_SIZE/2, -BUILDING_SIZE/4, BUILDING_SIZE, BUILDING_SIZE * 3/4);
+                ctx.fillRect(-BUILDING_SIZE/4, -BUILDING_SIZE/2, BUILDING_SIZE/6, BUILDING_SIZE/2);
                 break;
         }
-        ctx.fill();
+        
         ctx.restore();
         
-        // Update and draw particles
         if (building.particles.length > 0) {
             building.particles.forEach((particle, i) => {
                 particle.x += particle.vx;
@@ -343,7 +362,7 @@ function drawBuildings() {
                     ctx.globalAlpha = particle.life;
                     ctx.fillStyle = particle.color;
                     ctx.beginPath();
-                    ctx.arc(particle.x, particle.y, 2, 0, Math.PI * 2);
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.restore();
                 } else {
@@ -352,7 +371,6 @@ function drawBuildings() {
             });
         }
         
-        // Draw income text
         if (building.incomeText.alpha > 0) {
             ctx.save();
             ctx.globalAlpha = building.incomeText.alpha;
@@ -372,9 +390,21 @@ function drawBuildings() {
     });
 }
 
+function getBuildingColor(buildingType) {
+    switch(buildingType) {
+        case 'house':
+            return '#4CAF50';
+        case 'farm':
+            return '#FFC107';
+        case 'factory':
+            return '#F44336';
+        default:
+            return '#FFFFFF';
+    }
+}
+
 function gameLoop() {
     resizeCanvas();
-    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
     drawBuildings();
@@ -385,7 +415,6 @@ function gameLoop() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Draw glowing effect
         ctx.shadowBlur = 20;
         ctx.shadowColor = 'rgba(0, 255, 0, 0.5)';
         
@@ -393,55 +422,28 @@ function gameLoop() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillText(gameState.currentWord, canvas.width/2 + 2, canvas.height/3 + 2);
         
-        // Draw remaining letters
+        // Draw word outline
         ctx.fillStyle = '#666666';
         ctx.fillText(gameState.currentWord, canvas.width/2, canvas.height/3);
         
-        // Draw typed letters in green
+        // Draw typed progress
         ctx.fillStyle = '#4CAF50';
         ctx.shadowBlur = 30;
         ctx.shadowColor = '#4CAF50';
-        
-        // Draw correct progress in green
-        if (gameState.typingProgress) {
-            ctx.fillStyle = '#4CAF50';
-            ctx.fillText(
-                gameState.typingProgress,
-                canvas.width/2 - ((gameState.currentWord.length - gameState.typingProgress.length) * fontSize/4),
-                canvas.height/3
-            );
-        }
-        
-        // Draw wrong character in red if exists
-        if (gameState.wrongChar) {
-            ctx.fillStyle = '#ff4444';
-            ctx.fillText(
-                gameState.wrongChar,
-                canvas.width/2 - ((gameState.currentWord.length - gameState.typingProgress.length - 1) * fontSize/4),
-                canvas.height/3
-            );
-        }
-        
-        // Reset shadow
-        ctx.shadowBlur = 0;
+        ctx.fillText(
+            gameState.typingProgress,
+            canvas.width/2 - (ctx.measureText(gameState.currentWord).width/2) + 
+            (ctx.measureText(gameState.typingProgress).width/2),
+            canvas.height/3
+        );
     }
     
-    // Passive income
-    gameState.currency += (
-        gameState.buildings.house.count * gameState.buildings.house.income +
-        gameState.buildings.farm.count * gameState.buildings.farm.income +
-        gameState.buildings.factory.count * gameState.buildings.factory.income
-    ) / 60;
-    
-    updateDisplay();
     requestAnimationFrame(gameLoop);
 }
 
-// Initialize game
+// Initialize the game
+document.addEventListener('keydown', handleKeyPress);
 window.addEventListener('load', () => {
-    resizeCanvas();
     initGameState();
     gameLoop();
 });
-
-document.addEventListener('keypress', handleKeyPress);

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Typing Civilization Builder</title>
+    <title>Civilization Builder</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -20,7 +20,7 @@
                     </div>
                     <div id="typing-hint" class="typing-hint">Press any key to start building!</div>
                     <div id="floating-guide" class="floating-guide" style="display: none;">
-                        Type the word to build!
+                        Type the word to build your civilization!
                     </div>
                     <div id="bounce-arrow" class="bounce-arrow" style="display: none;">
                         <i class="bi bi-arrow-down"></i>
@@ -42,22 +42,22 @@
                         <h3 class="card-title text-center">Available Buildings</h3>
                         <div class="building-list">
                             <div class="building-item">
-                                <h5>House <i class="bi bi-house-fill"></i></h5>
+                                <h5>House <i class="bi bi-house"></i></h5>
                                 <p>Type "<span class="typing-word">BUILD</span>" (Cost: 100)</p>
                                 <p>Count: <span id="houses" class="badge bg-success">{{ player.houses }}</span></p>
-                                <small class="text-muted">Earns 1 currency per second</small>
+                                <small class="text-muted">Basic housing for your citizens (1 currency/s)</small>
                             </div>
                             <div class="building-item">
-                                <h5>Farm <i class="bi bi-tree-fill"></i></h5>
+                                <h5>Farm <i class="bi bi-tree"></i></h5>
                                 <p>Type "<span class="typing-word">FARM</span>" (Cost: 250)</p>
                                 <p>Count: <span id="farms" class="badge bg-warning">{{ player.farms }}</span></p>
-                                <small class="text-muted">Earns 2 currency per second</small>
+                                <small class="text-muted">Food production facility (2 currency/s)</small>
                             </div>
                             <div class="building-item">
                                 <h5>Factory <i class="bi bi-building"></i></h5>
                                 <p>Type "<span class="typing-word">INDUSTRY</span>" (Cost: 500)</p>
                                 <p>Count: <span id="factories" class="badge bg-danger">{{ player.factories }}</span></p>
-                                <small class="text-muted">Earns 5 currency per second</small>
+                                <small class="text-muted">Industrial production center (5 currency/s)</small>
                             </div>
                         </div>
                     </div>

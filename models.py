@@ -1,4 +1,4 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy 
 from datetime import datetime
 from sqlalchemy.orm import DeclarativeBase
 
@@ -13,7 +13,7 @@ class Player(db.Model):
     currency = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Building counts
+    # Buildings
     houses = db.Column(db.Integer, default=0)
     farms = db.Column(db.Integer, default=0)
     factories = db.Column(db.Integer, default=0)
@@ -21,9 +21,10 @@ class Player(db.Model):
     def calculate_offline_earnings(self):
         """Calculate earnings while player was offline"""
         time_diff = (datetime.utcnow() - self.last_login).total_seconds()
+        
         earnings_per_second = (
-            self.houses * 1 +    # 1 currency per house per second
-            self.farms * 2 +     # 2 currency per farm per second
-            self.factories * 5   # 5 currency per factory per second
+            self.houses * 1 +      # 1 currency per house per second
+            self.farms * 2 +       # 2 currency per farm per second
+            self.factories * 5     # 5 currency per factory per second
         )
         return int(time_diff * earnings_per_second)
