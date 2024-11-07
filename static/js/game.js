@@ -1,9 +1,9 @@
 let gameState = {
     currency: 100,
     buildings: {
-        house: { count: 0, cost: 100, word: 'BUILD', income: 1 },
-        farm: { count: 0, cost: 250, word: 'FARM', income: 2 },
-        factory: { count: 0, cost: 500, word: 'INDUSTRY', income: 5 }
+        cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },
+        habitat: { count: 0, cost: 250, word: 'HABITAT', income: 2 },
+        safari: { count: 0, cost: 500, word: 'SAFARI', income: 5 }
     },
     currentWord: '',
     typingProgress: '',
@@ -38,6 +38,11 @@ function updateAvailableBuildings() {
             item.style.opacity = '1';
         }
     });
+    
+    // Update happiness bars
+    document.getElementById('cage-happiness').style.width = `${gameState.buildings.cage.happiness || 80}%`;
+    document.getElementById('habitat-happiness').style.width = `${gameState.buildings.habitat.happiness || 85}%`;
+    document.getElementById('safari-happiness').style.width = `${gameState.buildings.safari.happiness || 90}%`;
 }
 
 function resizeCanvas() {
@@ -57,7 +62,7 @@ function showTypingStarted() {
         typingHint.style.animation = 'none';
         
         floatingGuide.style.display = 'block';
-        floatingGuide.style.top = '80px';
+        floatingGuide.style.top = '80px';  // Moved lower to avoid header
         floatingGuide.style.right = '20px';
         floatingGuide.style.left = 'auto';
         
@@ -124,14 +129,19 @@ async function initGameState() {
         const response = await fetch('/get_game_state');
         const data = await response.json();
         gameState.currency = Math.max(data.currency, 100);
-        gameState.buildings.house.count = data.houses;
-        gameState.buildings.farm.count = data.farms;
-        gameState.buildings.factory.count = data.factories;
+        gameState.buildings.cage.count = data.cages;
+        gameState.buildings.habitat.count = data.habitats;
+        gameState.buildings.safari.count = data.safaris;
+        
+        // Update happiness levels
+        gameState.buildings.cage.happiness = data.happiness.cage;
+        gameState.buildings.habitat.happiness = data.happiness.habitat;
+        gameState.buildings.safari.happiness = data.happiness.safari;
         
         // Initialize buildings on the grid
-        for (let i = 0; i < data.houses; i++) addBuilding('house', []);
-        for (let i = 0; i < data.farms; i++) addBuilding('farm', []);
-        for (let i = 0; i < data.factories; i++) addBuilding('factory', []);
+        for (let i = 0; i < data.cages; i++) addBuilding('cage', []);
+        for (let i = 0; i < data.habitats; i++) addBuilding('habitat', []);
+        for (let i = 0; i < data.safaris; i++) addBuilding('safari', []);
         
         updateDisplay();
         updateAvailableBuildings();
@@ -153,9 +163,10 @@ function updateDisplay() {
         currencyDisplay.textContent = newValue;
     }
     
-    document.getElementById('houses').textContent = gameState.buildings.house.count;
-    document.getElementById('farms').textContent = gameState.buildings.farm.count;
-    document.getElementById('factories').textContent = gameState.buildings.factory.count;
+    document.getElementById('cages').textContent = gameState.buildings.cage.count;
+    document.getElementById('habitats').textContent = gameState.buildings.habitat.count;
+    document.getElementById('safaris').textContent = gameState.buildings.safari.count;
+    document.getElementById('visitors').textContent = gameState.visitors || '0';
     updateTypingHint();
 }
 
@@ -263,7 +274,7 @@ function handleKeyPress(event) {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                building_type: buildingType,
+                                attraction_type: buildingType,
                                 currency: gameState.currency
                             })
                         }).catch(error => console.error('Failed to update progress:', error));
@@ -314,38 +325,53 @@ function drawBuildings() {
         const color = getBuildingColor(building.type);
         ctx.fillStyle = color;
         
+        ctx.beginPath();
         switch(building.type) {
-            case 'house':
-                // Draw house (simple house shape)
-                ctx.beginPath();
+            case 'cage':
+                // Draw cage (square with bars)
+                ctx.rect(-BUILDING_SIZE/2, -BUILDING_SIZE/2, BUILDING_SIZE, BUILDING_SIZE);
+                ctx.fillStyle = '#8BC34A';
+                ctx.fill();
+                ctx.strokeStyle = '#33691E';
+                ctx.lineWidth = 3;
+                for (let i = -3; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * BUILDING_SIZE/6, -BUILDING_SIZE/2);
+                    ctx.lineTo(i * BUILDING_SIZE/6, BUILDING_SIZE/2);
+                    ctx.stroke();
+                }
+                break;
+            case 'habitat':
+                // Draw habitat (natural enclosure)
                 ctx.moveTo(-BUILDING_SIZE/2, BUILDING_SIZE/2);
-                ctx.lineTo(-BUILDING_SIZE/2, 0);
-                ctx.lineTo(0, -BUILDING_SIZE/2);
-                ctx.lineTo(BUILDING_SIZE/2, 0);
+                ctx.lineTo(-BUILDING_SIZE/2, -BUILDING_SIZE/4);
+                ctx.quadraticCurveTo(0, -BUILDING_SIZE/2, BUILDING_SIZE/2, -BUILDING_SIZE/4);
                 ctx.lineTo(BUILDING_SIZE/2, BUILDING_SIZE/2);
-                ctx.closePath();
+                ctx.fillStyle = '#66BB6A';
+                ctx.fill();
+                // Add some trees
+                ctx.fillStyle = '#2E7D32';
+                ctx.beginPath();
+                ctx.arc(-BUILDING_SIZE/4, -BUILDING_SIZE/4, BUILDING_SIZE/8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(BUILDING_SIZE/4, -BUILDING_SIZE/3, BUILDING_SIZE/8, 0, Math.PI * 2);
                 ctx.fill();
                 break;
-                
-            case 'farm':
-                // Draw farm (barn shape)
-                ctx.beginPath();
-                ctx.moveTo(-BUILDING_SIZE/2, BUILDING_SIZE/2);
-                ctx.lineTo(-BUILDING_SIZE/2, 0);
-                ctx.lineTo(0, -BUILDING_SIZE/2);
-                ctx.lineTo(BUILDING_SIZE/2, 0);
-                ctx.lineTo(BUILDING_SIZE/2, BUILDING_SIZE/2);
-                ctx.closePath();
+            case 'safari':
+                // Draw safari zone (complex enclosure)
+                ctx.rect(-BUILDING_SIZE/2, -BUILDING_SIZE/2, BUILDING_SIZE, BUILDING_SIZE);
+                ctx.fillStyle = '#FFB74D';
                 ctx.fill();
-                // Add some details
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(-BUILDING_SIZE/4, 0, BUILDING_SIZE/2, BUILDING_SIZE/2);
-                break;
-                
-            case 'factory':
-                // Draw factory (industrial building with chimney)
-                ctx.fillRect(-BUILDING_SIZE/2, -BUILDING_SIZE/4, BUILDING_SIZE, BUILDING_SIZE * 3/4);
-                ctx.fillRect(-BUILDING_SIZE/4, -BUILDING_SIZE/2, BUILDING_SIZE/6, BUILDING_SIZE/2);
+                // Add decorative elements
+                ctx.strokeStyle = '#F57C00';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-BUILDING_SIZE/3, -BUILDING_SIZE/3);
+                ctx.lineTo(BUILDING_SIZE/3, -BUILDING_SIZE/3);
+                ctx.moveTo(0, -BUILDING_SIZE/2);
+                ctx.lineTo(0, BUILDING_SIZE/2);
+                ctx.stroke();
                 break;
         }
         
@@ -392,12 +418,12 @@ function drawBuildings() {
 
 function getBuildingColor(buildingType) {
     switch(buildingType) {
-        case 'house':
-            return '#4CAF50';
-        case 'farm':
-            return '#FFC107';
-        case 'factory':
-            return '#F44336';
+        case 'cage':
+            return '#8BC34A';
+        case 'habitat':
+            return '#66BB6A';
+        case 'safari':
+            return '#FFB74D';
         default:
             return '#FFFFFF';
     }
@@ -430,20 +456,36 @@ function gameLoop() {
         ctx.fillStyle = '#4CAF50';
         ctx.shadowBlur = 30;
         ctx.shadowColor = '#4CAF50';
-        ctx.fillText(
-            gameState.typingProgress,
-            canvas.width/2 - (ctx.measureText(gameState.currentWord).width/2) + 
-            (ctx.measureText(gameState.typingProgress).width/2),
-            canvas.height/3
-        );
+        if (gameState.typingProgress) {
+            ctx.fillStyle = '#4CAF50';
+            const offsetX = ((gameState.currentWord.length - gameState.typingProgress.length) * fontSize/4);
+            ctx.fillText(
+                gameState.typingProgress,
+                canvas.width/2 - offsetX,
+                canvas.height/3
+            );
+        }
+        
+        if (gameState.wrongChar) {
+            ctx.fillStyle = '#ff4444';
+            const offsetX = ((gameState.currentWord.length - gameState.typingProgress.length - 1) * fontSize/4);
+            ctx.fillText(
+                gameState.wrongChar,
+                canvas.width/2 - offsetX,
+                canvas.height/3
+            );
+        }
+        
+        ctx.shadowBlur = 0;
     }
     
     requestAnimationFrame(gameLoop);
 }
 
 // Initialize the game
-document.addEventListener('keydown', handleKeyPress);
+document.addEventListener('keypress', handleKeyPress);
 window.addEventListener('load', () => {
+    resizeCanvas();
     initGameState();
     gameLoop();
 });

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-bs-theme="dark">
 <head>
-    <title>Civilization Builder</title>
+    <title>Zoo Typing Adventure</title>
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -20,7 +20,7 @@
                     </div>
                     <div id="typing-hint" class="typing-hint">Press any key to start building!</div>
                     <div id="floating-guide" class="floating-guide" style="display: none;">
-                        Type the word to build your civilization!
+                        Type the word to build your zoo!
                     </div>
                     <div id="bounce-arrow" class="bounce-arrow" style="display: none;">
                         <i class="bi bi-arrow-down"></i>
@@ -30,34 +30,64 @@
             <div class="col-md-4">
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h3 class="card-title text-center">Resources</h3>
+                        <h3 class="card-title text-center">Zoo Stats</h3>
                         <div class="currency-display">
                             <h4>Currency: <span id="currency" class="badge bg-warning">{{ player.currency }}</span></h4>
+                        </div>
+                        <div class="visitors-display mt-2">
+                            <h4>Visitors: <span id="visitors" class="badge bg-info">{{ player.visitors }}</span></h4>
                         </div>
                     </div>
                 </div>
                 
                 <div class="card">
                     <div class="card-body">
-                        <h3 class="card-title text-center">Available Buildings</h3>
+                        <h3 class="card-title text-center">Available Attractions</h3>
                         <div class="building-list">
                             <div class="building-item">
-                                <h5>House <i class="bi bi-house"></i></h5>
-                                <p>Type "<span class="typing-word">BUILD</span>" (Cost: 100)</p>
-                                <p>Count: <span id="houses" class="badge bg-success">{{ player.houses }}</span></p>
-                                <small class="text-muted">Basic housing for your citizens (1 currency/s)</small>
+                                <h5>Animal Cage <i class="bi bi-box"></i></h5>
+                                <p>Type "<span class="typing-word">CAGE</span>" (Cost: 100)</p>
+                                <p>Count: <span id="cages" class="badge bg-success">{{ player.cages }}</span></p>
+                                <div class="happiness-meter">
+                                    <small>Happiness:</small>
+                                    <div class="progress">
+                                        <div id="cage-happiness" class="progress-bar bg-success" 
+                                             role="progressbar" style="width: {{ player.cage_happiness }}%">
+                                            {{ player.cage_happiness }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Basic enclosure for small animals</small>
                             </div>
                             <div class="building-item">
-                                <h5>Farm <i class="bi bi-tree"></i></h5>
-                                <p>Type "<span class="typing-word">FARM</span>" (Cost: 250)</p>
-                                <p>Count: <span id="farms" class="badge bg-warning">{{ player.farms }}</span></p>
-                                <small class="text-muted">Food production facility (2 currency/s)</small>
+                                <h5>Habitat <i class="bi bi-tree"></i></h5>
+                                <p>Type "<span class="typing-word">HABITAT</span>" (Cost: 250)</p>
+                                <p>Count: <span id="habitats" class="badge bg-warning">{{ player.habitats }}</span></p>
+                                <div class="happiness-meter">
+                                    <small>Happiness:</small>
+                                    <div class="progress">
+                                        <div id="habitat-happiness" class="progress-bar bg-warning" 
+                                             role="progressbar" style="width: {{ player.habitat_happiness }}%">
+                                            {{ player.habitat_happiness }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Natural environment for medium animals</small>
                             </div>
                             <div class="building-item">
-                                <h5>Factory <i class="bi bi-building"></i></h5>
-                                <p>Type "<span class="typing-word">INDUSTRY</span>" (Cost: 500)</p>
-                                <p>Count: <span id="factories" class="badge bg-danger">{{ player.factories }}</span></p>
-                                <small class="text-muted">Industrial production center (5 currency/s)</small>
+                                <h5>Safari Zone <i class="bi bi-compass"></i></h5>
+                                <p>Type "<span class="typing-word">SAFARI</span>" (Cost: 500)</p>
+                                <p>Count: <span id="safaris" class="badge bg-danger">{{ player.safaris }}</span></p>
+                                <div class="happiness-meter">
+                                    <small>Happiness:</small>
+                                    <div class="progress">
+                                        <div id="safari-happiness" class="progress-bar bg-danger" 
+                                             role="progressbar" style="width: {{ player.safari_happiness }}%">
+                                            {{ player.safari_happiness }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Premium space for large animals</small>
                             </div>
                         </div>
                     </div>

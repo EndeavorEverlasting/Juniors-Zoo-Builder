@@ -19,6 +19,8 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 db.init_app(app)
 
 with app.app_context():
+    # Drop all tables and recreate them
+    db.drop_all()
     db.create_all()
     
     # Create initial player if doesn't exist
@@ -40,6 +42,20 @@ def game():
     # Ensure minimum currency for new players
     if player.currency < 100:
         player.currency = 100
+        
+    # Update happiness levels periodically
+    player.cage_happiness = min(100, max(50, player.cage_happiness))
+    player.habitat_happiness = min(100, max(60, player.habitat_happiness))
+    player.safari_happiness = min(100, max(70, player.safari_happiness))
+    
+    # Update visitor count based on attractions and happiness
+    base_visitors = (player.cages * 2 + player.habitats * 4 + player.safaris * 8)
+    happiness_multiplier = (
+        player.cage_happiness + 
+        player.habitat_happiness + 
+        player.safari_happiness
+    ) / 300  # Average happiness (0.5 to 1.0)
+    player.visitors = int(base_visitors * happiness_multiplier)
     
     player.last_login = datetime.utcnow()
     db.session.commit()
@@ -53,9 +69,15 @@ def get_game_state():
     player = Player.query.first()
     return jsonify({
         'currency': max(player.currency, 100),
-        'houses': player.houses,
-        'farms': player.farms,
-        'factories': player.factories
+        'cages': player.cages,
+        'habitats': player.habitats,
+        'safaris': player.safaris,
+        'visitors': player.visitors,
+        'happiness': {
+            'cage': player.cage_happiness,
+            'habitat': player.habitat_happiness,
+            'safari': player.safari_happiness
+        }
     })
 
 @app.route('/update_progress', methods=['POST'])
@@ -63,15 +85,15 @@ def update_progress():
     player = Player.query.first()
     data = request.json
     
-    # Update building counts
-    if 'building_type' in data:
-        building_type = data['building_type']
-        if building_type == 'house':
-            player.houses += 1
-        elif building_type == 'farm':
-            player.farms += 1
-        elif building_type == 'factory':
-            player.factories += 1
+    # Update attraction counts
+    if 'attraction_type' in data:
+        attraction_type = data['attraction_type']
+        if attraction_type == 'cage':
+            player.cages += 1
+        elif attraction_type == 'habitat':
+            player.habitats += 1
+        elif attraction_type == 'safari':
+            player.safaris += 1
     
     player.currency = data.get('currency', player.currency)
     db.session.commit()
