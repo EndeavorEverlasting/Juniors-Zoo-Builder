@@ -1,0 +1,15 @@
+<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg">
+    <!-- Large animal (elephant) -->
+    <g class="animal">
+        <path d="M20,35 C30,35 35,25 35,20 C35,10 25,5 20,5 C15,5 5,10 5,20 C5,25 10,35 20,35" fill="#808080"/>
+        <path d="M20,20 C25,20 25,15 30,10 C35,5 35,15 30,15 C25,15 20,20 20,20" fill="#808080"/>
+        <circle cx="15" cy="15" r="2" fill="#000"/>
+        <circle cx="25" cy="15" r="2" fill="#000"/>
+    </g>
+    <animateTransform
+        attributeName="transform"
+        type="translate"
+        dur="4s"
+        values="0,0; 5,0; 0,0; -5,0; 0,0"
+        repeatCount="indefinite"/>
+</svg>

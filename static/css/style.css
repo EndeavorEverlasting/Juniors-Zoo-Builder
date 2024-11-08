@@ -6,11 +6,13 @@
     background-color: var(--bs-dark);
     border: 2px solid var(--bs-secondary);
     border-radius: 4px;
+    touch-action: none;
 }
 
 .canvas-container {
     position: relative;
     margin-bottom: 1rem;
+    overflow: hidden;
 }
 
 @keyframes pulse {
@@ -35,6 +37,11 @@
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
+@keyframes rain {
+    0% { transform: translateY(-10px); }
+    100% { transform: translateY(20px); opacity: 0; }
+}
+
 .shake {
     animation: shake 0.5s ease-in-out;
 }
@@ -54,6 +61,7 @@
     border: 2px solid var(--bs-info);
     box-shadow: 0 0 15px rgba(var(--bs-info-rgb), 0.5);
     z-index: 10;
+    pointer-events: none;
 }
 
 .keyboard-icon {
@@ -83,6 +91,7 @@
     color: var(--bs-light);
     opacity: 0;
     transition: opacity 0.3s;
+    pointer-events: none;
 }
 
 .next-key-hint.visible {
@@ -108,81 +117,62 @@
     border-color: var(--bs-info);
 }
 
-.building-item h5 {
-    margin-bottom: 0.5rem;
-    color: var(--bs-light);
-    font-size: 1.4rem;
-}
-
-.typing-word {
-    font-family: monospace;
-    font-weight: bold;
-    color: var(--bs-info);
-    letter-spacing: 2px;
-    font-size: 1.2rem;
-}
-
-.currency-display {
-    text-align: center;
-    padding: 1rem;
-    background-color: rgba(var(--bs-dark-rgb), 0.5);
-    border-radius: 8px;
-    animation: float 3s infinite ease-in-out;
-}
-
-.currency-display h4 {
-    margin: 0;
-    font-size: 1.6rem;
-}
-
-.badge {
-    font-size: 1.2rem;
-    padding: 0.5rem 1rem;
-}
-
-.typed-progress {
-    color: var(--bs-success);
-    text-shadow: 0 0 10px var(--bs-success);
-}
-
-.wrong-letter {
-    color: var(--bs-danger);
-    text-shadow: 0 0 10px var(--bs-danger);
-}
-
-.floating-guide {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: rgba(var(--bs-info-rgb), 0.9);
-    padding: 15px;
-    border-radius: 15px;
-    color: var(--bs-light);
-    font-size: 1.2rem;
-    animation: float 4s infinite ease-in-out;
-    z-index: 100;
-    pointer-events: none;
-}
-
-.bounce-arrow {
+.happiness-indicator {
     position: absolute;
-    font-size: 2rem;
     color: var(--bs-warning);
+    animation: float 2s infinite ease-in-out;
+    pointer-events: none;
+}
+
+.rain-drop {
+    position: absolute;
+    width: 2px;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(155, 155, 255, 0), rgba(155, 155, 255, 0.5));
+    animation: rain 1s linear infinite;
+}
+
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: float 4s infinite ease-in-out;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    #gameCanvas {
+        height: 40vh;
+    }
+    
+    .typing-hint {
+        font-size: 1rem;
+        padding: 10px 20px;
+        bottom: 10px;
+    }
+    
+    .building-item {
+        padding: 0.8rem;
+    }
+    
+    .building-item h5 {
+        font-size: 1.2rem;
+    }
+    
+    .virtual-keyboard {
+        background-color: rgba(var(--bs-dark-rgb), 0.95);
+    }
+}
+
+/* Animation utility classes */
+.bounce {
     animation: bounce 2s infinite;
-    pointer-events: none;
 }
 
-.currency-change {
-    position: absolute;
-    font-weight: bold;
-    pointer-events: none;
-    animation: float 1s forwards;
+.float {
+    animation: float 3s infinite;
 }
 
-.income-indicator {
-    position: absolute;
-    color: var(--bs-success);
-    font-weight: bold;
-    pointer-events: none;
-    animation: float 2s forwards;
+.pulse {
+    animation: pulse 2s infinite;
 }

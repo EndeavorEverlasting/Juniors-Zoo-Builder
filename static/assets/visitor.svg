@@ -1,0 +1,17 @@
+<svg width="20" height="30" xmlns="http://www.w3.org/2000/svg">
+    <!-- Visitor sprite -->
+    <g class="visitor">
+        <circle cx="10" cy="7" r="5" fill="#FFD700"/>
+        <line x1="10" y1="12" x2="10" y2="22" stroke="#FFD700" stroke-width="2"/>
+        <line x1="10" y1="22" x2="5" y2="28" stroke="#FFD700" stroke-width="2"/>
+        <line x1="10" y1="22" x2="15" y2="28" stroke="#FFD700" stroke-width="2"/>
+        <line x1="10" y1="15" x2="5" y2="20" stroke="#FFD700" stroke-width="2"/>
+        <line x1="10" y1="15" x2="15" y2="20" stroke="#FFD700" stroke-width="2"/>
+    </g>
+    <animateTransform
+        attributeName="transform"
+        type="translate"
+        dur="1s"
+        values="0,0; 0,-2; 0,0"
+        repeatCount="indefinite"/>
+</svg>
