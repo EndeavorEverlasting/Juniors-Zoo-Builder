@@ -1,3 +1,17 @@
+// Get DOM elements
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const typingHint = document.getElementById('typing-hint');
+const keyboardIcon = document.getElementById('keyboard-icon');
+const nextKeyHint = document.getElementById('next-key-hint');
+const nextKey = document.getElementById('next-key');
+const floatingGuide = document.getElementById('floating-guide');
+const bounceArrow = document.getElementById('bounce-arrow');
+
+// Animation properties
+const GRID_CELL_SIZE = 80;
+const BUILDING_SIZE = 60;
+
 let gameState = {
     currency: 100,
     buildings: {
@@ -14,24 +28,39 @@ let gameState = {
     nextGridPos: { row: 0, col: 0 }
 };
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const typingHint = document.getElementById('typing-hint');
-const keyboardIcon = document.getElementById('keyboard-icon');
-const nextKeyHint = document.getElementById('next-key-hint');
-const nextKey = document.getElementById('next-key');
-const floatingGuide = document.getElementById('floating-guide');
-const bounceArrow = document.getElementById('bounce-arrow');
-
-// Animation properties
-const GRID_CELL_SIZE = 80;
-const BUILDING_SIZE = 60;
-
 let virtualKeyboard = {
     visible: false,
     keys: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
     container: null
 };
+
+function initGameState() {
+    gameState = {
+        currency: 100,
+        buildings: {
+            cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },
+            habitat: { count: 0, cost: 250, word: 'HABITAT', income: 2 },
+            safari: { count: 0, cost: 500, word: 'SAFARI', income: 5 }
+        },
+        currentWord: '',
+        typingProgress: '',
+        hasStartedTyping: false,
+        buildingGrid: [],
+        wrongChar: null,
+        gridSize: { rows: 3, cols: 8 },
+        nextGridPos: { row: 0, col: 0 }
+    };
+}
+
+function showTypingStarted() {
+    gameState.hasStartedTyping = true;
+    typingHint.style.opacity = '0';
+    keyboardIcon.classList.add('visible');
+    nextKeyHint.classList.add('visible');
+    if (isMobileDevice()) {
+        toggleVirtualKeyboard(true);
+    }
+}
 
 function isMobileDevice() {
     return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
@@ -75,9 +104,6 @@ function toggleVirtualKeyboard(show) {
 }
 
 function updateUIElementsPosition() {
-    const typingHint = document.getElementById('typing-hint');
-    const keyboardIcon = document.getElementById('keyboard-icon');
-    
     if (isMobileDevice()) {
         typingHint.style.fontSize = '1rem';
         typingHint.style.padding = '10px 20px';
@@ -105,8 +131,18 @@ function resizeCanvas() {
     }
 }
 
-// Existing functions from the original code (updateAvailableBuildings, showTypingStarted, etc.)
-// ... [rest of the original functions]
+function updateAvailableBuildings() {
+    const buildingItems = document.querySelectorAll('.building-item');
+    buildingItems.forEach(item => {
+        const buildingWord = item.querySelector('.typing-word').textContent;
+        const building = Object.values(gameState.buildings).find(b => b.word === buildingWord);
+        if (building && gameState.currency < building.cost) {
+            item.style.opacity = '0.5';
+        } else {
+            item.style.opacity = '1';
+        }
+    });
+}
 
 function handleKeyPress(event) {
     const key = event.key.toUpperCase();
@@ -128,79 +164,104 @@ function handleKeyPress(event) {
             }
         }
     } else {
-        // Existing handleKeyPress logic
-        // ... [rest of the existing implementation]
+        const nextChar = gameState.currentWord[gameState.typingProgress.length];
+        if (key === nextChar) {
+            gameState.typingProgress += key;
+            gameState.wrongChar = null;
+            playCorrectKeySound();
+            
+            if (gameState.typingProgress === gameState.currentWord) {
+                for (const [buildingType, building] of Object.entries(gameState.buildings)) {
+                    if (building.word === gameState.currentWord) {
+                        gameState.currency -= building.cost;
+                        building.count++;
+                        playBuildingComplete();
+                        
+                        const gridPos = {
+                            x: (canvas.width - (gameState.gridSize.cols * GRID_CELL_SIZE)) / 2 + 
+                               (gameState.nextGridPos.col * GRID_CELL_SIZE),
+                            y: canvas.height * 0.7 - (gameState.nextGridPos.row * GRID_CELL_SIZE)
+                        };
+                        
+                        animateBuilding(buildingType, gridPos.x, gridPos.y);
+                        
+                        // Update grid position
+                        gameState.nextGridPos.col++;
+                        if (gameState.nextGridPos.col >= gameState.gridSize.cols) {
+                            gameState.nextGridPos.col = 0;
+                            gameState.nextGridPos.row++;
+                            if (gameState.nextGridPos.row >= gameState.gridSize.rows) {
+                                gameState.nextGridPos.row = 0;
+                            }
+                        }
+                        
+                        fetch('/update_progress', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                attraction_type: buildingType,
+                                currency: gameState.currency
+                            })
+                        }).catch(error => console.error('Failed to update progress:', error));
+                        
+                        break;
+                    }
+                }
+                gameState.currentWord = '';
+                gameState.typingProgress = '';
+                gameState.wrongChar = null;
+            }
+        } else {
+            gameState.wrongChar = key;
+            playWrongKeySound();
+            typingHint.classList.add('shake');
+            setTimeout(() => typingHint.classList.remove('shake'), 500);
+        }
     }
     
     updateDisplay();
     updateAvailableBuildings();
 }
 
-// Add touch event listeners
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
+function updateDisplay() {
+    document.getElementById('currency').textContent = Math.floor(gameState.currency);
+    document.getElementById('cages').textContent = gameState.buildings.cage.count;
+    document.getElementById('habitats').textContent = gameState.buildings.habitat.count;
+    document.getElementById('safaris').textContent = gameState.buildings.safari.count;
+    
+    // Update typing hint
+    if (!gameState.currentWord) {
+        let availableBuildings = [];
+        for (const [type, building] of Object.entries(gameState.buildings)) {
+            if (gameState.currency >= building.cost) {
+                availableBuildings.push(`Type "${building.word}" for a ${type} (${building.cost} coins)`);
+            }
+        }
+        typingHint.textContent = gameState.hasStartedTyping ? 
+            (availableBuildings.length > 0 ? availableBuildings[0] : 'Earn more coins to build!') :
+            'Press any key to start building!';
+    } else {
+        const nextChar = gameState.currentWord[gameState.typingProgress.length];
+        nextKey.textContent = nextChar;
+        
+        let displayText = gameState.typingProgress;
+        if (gameState.wrongChar) {
+            displayText += `<span class="wrong-letter">${gameState.wrongChar}</span>`;
+        }
+        typingHint.innerHTML = `Type: <span class="typed-progress">${displayText}</span>${gameState.currentWord.slice(displayText.length)}`;
+    }
+}
+
+// Mobile touch handling
+document.addEventListener('touchstart', (e) => {
     if (!gameState.hasStartedTyping) {
+        e.preventDefault();
         showTypingStarted();
         toggleVirtualKeyboard(true);
     }
-});
-
-// Add CSS for mobile support
-const style = document.createElement('style');
-style.textContent = `
-    .virtual-keyboard {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--bs-dark);
-        padding: 10px;
-        z-index: 1000;
-        border-top: 2px solid var(--bs-secondary);
-    }
-    
-    .keyboard-layout {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 5px;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    
-    .keyboard-key {
-        background: var(--bs-secondary);
-        border: none;
-        border-radius: 5px;
-        padding: 10px;
-        color: var(--bs-light);
-        font-size: 1.2rem;
-        touch-action: manipulation;
-    }
-    
-    .keyboard-key:active {
-        background: var(--bs-primary);
-    }
-    
-    .keyboard-visible .canvas-container {
-        margin-bottom: 200px;
-    }
-    
-    @media (max-width: 768px) {
-        .typing-hint {
-            font-size: 1rem !important;
-            padding: 10px 20px !important;
-        }
-        
-        .building-item {
-            padding: 0.8rem;
-        }
-        
-        .building-item h5 {
-            font-size: 1.2rem;
-        }
-    }
-`;
-document.head.appendChild(style);
+}, { passive: false });
 
 // Initialize the game
 document.addEventListener('keypress', handleKeyPress);
