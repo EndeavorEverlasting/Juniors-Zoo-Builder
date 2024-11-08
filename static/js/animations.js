@@ -75,6 +75,35 @@ function drawWeather() {
     }
 }
 
+function drawBuildings() {
+    gameState.buildingGrid.forEach(building => {
+        // Draw building
+        const buildingImg = new Image();
+        buildingImg.src = `/static/assets/${building.type}.svg`;
+        ctx.save();
+        ctx.globalAlpha = building.opacity;
+        ctx.translate(building.x, building.y);
+        ctx.scale(building.scale, building.scale);
+        ctx.drawImage(buildingImg, 0, 0, BUILDING_SIZE, BUILDING_SIZE);
+        
+        // Draw animal
+        if (building.animal) {
+            ctx.drawImage(building.animal, 
+                BUILDING_SIZE * 0.25, BUILDING_SIZE * 0.25,
+                BUILDING_SIZE * 0.5, BUILDING_SIZE * 0.5);
+        }
+        ctx.restore();
+        
+        // Update animation properties
+        if (building.scale < 1) {
+            building.scale += 0.05;
+        }
+        if (building.opacity < 1) {
+            building.opacity += 0.05;
+        }
+    });
+}
+
 function addVisitor(x, y) {
     const visitorImg = new Image();
     visitorImg.src = '/static/assets/visitor.svg';
@@ -201,7 +230,6 @@ function animateBuilding(buildingType, x, y) {
 
 // Update the game loop to include new animations
 function gameLoop() {
-    resizeCanvas();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     drawBackground();

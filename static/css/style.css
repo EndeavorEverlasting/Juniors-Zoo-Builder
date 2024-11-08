@@ -155,9 +155,16 @@
 
 .keyboard-key:active,
 .keyboard-key.touched {
-    transform: translateY(2px);
+    transform: translateY(4px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     background: linear-gradient(145deg, #1976D2, #1565C0);
+    transition: all 0.1s;
+}
+
+.keyboard-key.special-key {
+    width: 80px;
+    font-size: 1rem;
+    background: linear-gradient(145deg, #424242, #212121);
 }
 
 .key-background {
