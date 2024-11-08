@@ -37,11 +37,6 @@
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
-@keyframes rain {
-    0% { transform: translateY(-10px); }
-    100% { transform: translateY(20px); opacity: 0; }
-}
-
 .shake {
     animation: shake 0.5s ease-in-out;
 }
@@ -117,26 +112,94 @@
     border-color: var(--bs-info);
 }
 
-.happiness-indicator {
-    position: absolute;
-    color: var(--bs-warning);
-    animation: float 2s infinite ease-in-out;
-    pointer-events: none;
+/* Virtual Keyboard Styles */
+.virtual-keyboard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    z-index: 1000;
 }
 
-.rain-drop {
-    position: absolute;
-    width: 2px;
-    height: 10px;
-    background: linear-gradient(to bottom, rgba(155, 155, 255, 0), rgba(155, 155, 255, 0.5));
-    animation: rain 1s linear infinite;
+.keyboard-layout {
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-.cloud {
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.keyboard-key {
+    position: relative;
+    width: 50px;
+    height: 60px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #2196F3, #1976D2);
+    color: white;
+    font-size: 1.4rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.keyboard-key:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.key-background {
     position: absolute;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    animation: float 4s infinite ease-in-out;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.key-letter {
+    position: relative;
+    z-index: 2;
+}
+
+.letter-background {
+    width: 100%;
+    height: 100%;
+    opacity: 0.2;
+}
+
+.letter-shape {
+    fill: white;
+    font-size: 24px;
+    font-family: Arial, sans-serif;
+}
+
+.decoration {
+    fill: none;
+    stroke: white;
+    stroke-width: 2;
+    opacity: 0.3;
+}
+
+.keyboard-layout-toggle {
+    display: block;
+    margin: 0 auto 10px;
+    padding: 8px 16px;
+    background: #424242;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.9rem;
 }
 
 /* Mobile-specific styles */
@@ -161,6 +224,12 @@
     
     .virtual-keyboard {
         background-color: rgba(var(--bs-dark-rgb), 0.95);
+    }
+
+    .keyboard-key {
+        width: 40px;
+        height: 50px;
+        font-size: 1.2rem;
     }
 }
 

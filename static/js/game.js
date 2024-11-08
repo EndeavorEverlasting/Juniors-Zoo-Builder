@@ -1,3 +1,17 @@
+// Keyboard layouts
+const KEYBOARD_LAYOUTS = {
+    QWERTY: [
+        'QWERTYUIOP'.split(''),
+        'ASDFGHJKL'.split(''),
+        'ZXCVBNM'.split('')
+    ],
+    ABC: [
+        'ABCDEFGHI'.split(''),
+        'JKLMNOPQR'.split(''),
+        'STUVWXYZ'.split('')
+    ]
+};
+
 // Get DOM elements
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -12,6 +26,7 @@ const bounceArrow = document.getElementById('bounce-arrow');
 const GRID_CELL_SIZE = 80;
 const BUILDING_SIZE = 60;
 
+let currentKeyboardLayout = 'QWERTY';
 let gameState = {
     currency: 100,
     buildings: {
@@ -30,7 +45,6 @@ let gameState = {
 
 let virtualKeyboard = {
     visible: false,
-    keys: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
     container: null
 };
 
@@ -52,41 +66,76 @@ function initGameState() {
     };
 }
 
-function showTypingStarted() {
-    gameState.hasStartedTyping = true;
-    typingHint.style.opacity = '0';
-    keyboardIcon.classList.add('visible');
-    nextKeyHint.classList.add('visible');
-    if (isMobileDevice()) {
-        toggleVirtualKeyboard(true);
-    }
+function toggleKeyboardLayout() {
+    currentKeyboardLayout = currentKeyboardLayout === 'QWERTY' ? 'ABC' : 'QWERTY';
+    const layoutToggle = virtualKeyboard.container.querySelector('.keyboard-layout-toggle');
+    layoutToggle.textContent = `Switch to ${currentKeyboardLayout === 'QWERTY' ? 'ABC' : 'QWERTY'}`;
+    recreateKeyboard();
 }
 
-function isMobileDevice() {
-    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+function getLetterSVG(letter) {
+    return `<svg viewBox="0 0 40 40" class="letter-background">
+        <text x="20" y="30" text-anchor="middle" class="letter-shape">${letter}</text>
+        ${getLetterDecorations(letter)}
+    </svg>`;
+}
+
+function getLetterDecorations(letter) {
+    switch(letter) {
+        case 'A': return '<path d="M10,35 L20,15 L30,35" class="decoration"/>';
+        case 'B': return '<circle cx="20" cy="20" r="15" class="decoration"/>';
+        case 'C': return '<path d="M30,10 A15,15 0 0,0 10,20 A15,15 0 0,0 30,30" class="decoration"/>';
+        case 'Z': return '<path d="M10,10 L30,10 L10,30 L30,30" class="decoration"/>';
+        default: return '';
+    }
 }
 
 function createVirtualKeyboard() {
     virtualKeyboard.container = document.createElement('div');
     virtualKeyboard.container.className = 'virtual-keyboard';
-    virtualKeyboard.container.style.display = 'none';
+    
+    // Add layout toggle
+    const layoutToggle = document.createElement('button');
+    layoutToggle.className = 'keyboard-layout-toggle';
+    layoutToggle.textContent = 'Switch to ABC';
+    layoutToggle.onclick = toggleKeyboardLayout;
+    virtualKeyboard.container.appendChild(layoutToggle);
     
     const keyboardLayout = document.createElement('div');
     keyboardLayout.className = 'keyboard-layout';
     
-    virtualKeyboard.keys.forEach(key => {
-        const keyButton = document.createElement('button');
-        keyButton.className = 'keyboard-key';
-        keyButton.textContent = key;
-        keyButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            handleKeyPress({ key });
+    KEYBOARD_LAYOUTS[currentKeyboardLayout].forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'keyboard-row';
+        
+        row.forEach(key => {
+            const keyButton = document.createElement('button');
+            keyButton.className = 'keyboard-key';
+            keyButton.innerHTML = `
+                <div class="key-background">
+                    ${getLetterSVG(key)}
+                </div>
+                <span class="key-letter">${key}</span>
+            `;
+            keyButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleKeyPress({ key });
+            });
+            rowDiv.appendChild(keyButton);
         });
-        keyboardLayout.appendChild(keyButton);
+        keyboardLayout.appendChild(rowDiv);
     });
     
     virtualKeyboard.container.appendChild(keyboardLayout);
     document.body.appendChild(virtualKeyboard.container);
+}
+
+function recreateKeyboard() {
+    if (virtualKeyboard.container) {
+        const oldContainer = virtualKeyboard.container;
+        createVirtualKeyboard();
+        oldContainer.parentNode.removeChild(oldContainer);
+    }
 }
 
 function toggleVirtualKeyboard(show) {
@@ -103,31 +152,17 @@ function toggleVirtualKeyboard(show) {
     }
 }
 
-function updateUIElementsPosition() {
-    if (isMobileDevice()) {
-        typingHint.style.fontSize = '1rem';
-        typingHint.style.padding = '10px 20px';
-        keyboardIcon.style.fontSize = '1.5rem';
-    } else {
-        typingHint.style.fontSize = '1.4rem';
-        typingHint.style.padding = '15px 30px';
-        keyboardIcon.style.fontSize = '2rem';
-    }
+function isMobileDevice() {
+    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
 }
 
-function resizeCanvas() {
-    const container = canvas.parentElement;
-    const displayWidth = container.clientWidth;
-    const displayHeight = isMobileDevice() ? window.innerHeight * 0.4 : 400;
-    
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-        
-        gameState.gridSize.cols = Math.floor(displayWidth / GRID_CELL_SIZE);
-        gameState.gridSize.rows = Math.floor(displayHeight * 0.3 / GRID_CELL_SIZE);
-        
-        updateUIElementsPosition();
+function showTypingStarted() {
+    gameState.hasStartedTyping = true;
+    typingHint.style.opacity = '0';
+    keyboardIcon.classList.add('visible');
+    nextKeyHint.classList.add('visible');
+    if (isMobileDevice()) {
+        toggleVirtualKeyboard(true);
     }
 }
 
@@ -251,6 +286,34 @@ function updateDisplay() {
             displayText += `<span class="wrong-letter">${gameState.wrongChar}</span>`;
         }
         typingHint.innerHTML = `Type: <span class="typed-progress">${displayText}</span>${gameState.currentWord.slice(displayText.length)}`;
+    }
+}
+
+function updateUIElementsPosition() {
+    if (isMobileDevice()) {
+        typingHint.style.fontSize = '1rem';
+        typingHint.style.padding = '10px 20px';
+        keyboardIcon.style.fontSize = '1.5rem';
+    } else {
+        typingHint.style.fontSize = '1.4rem';
+        typingHint.style.padding = '15px 30px';
+        keyboardIcon.style.fontSize = '2rem';
+    }
+}
+
+function resizeCanvas() {
+    const container = canvas.parentElement;
+    const displayWidth = container.clientWidth;
+    const displayHeight = isMobileDevice() ? window.innerHeight * 0.4 : 400;
+    
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+        
+        gameState.gridSize.cols = Math.floor(displayWidth / GRID_CELL_SIZE);
+        gameState.gridSize.rows = Math.floor(displayHeight * 0.3 / GRID_CELL_SIZE);
+        
+        updateUIElementsPosition();
     }
 }
 
