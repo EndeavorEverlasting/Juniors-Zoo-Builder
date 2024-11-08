@@ -153,9 +153,11 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-.keyboard-key:active {
+.keyboard-key:active,
+.keyboard-key.touched {
     transform: translateY(2px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background: linear-gradient(145deg, #1976D2, #1565C0);
 }
 
 .key-background {
@@ -223,7 +225,15 @@
     }
     
     .virtual-keyboard {
-        background-color: rgba(var(--bs-dark-rgb), 0.95);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        padding: 10px;
+        z-index: 1000;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
     }
 
     .keyboard-key {

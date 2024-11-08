@@ -13,8 +13,6 @@ const KEYBOARD_LAYOUTS = {
 };
 
 // Get DOM elements
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
 const typingHint = document.getElementById('typing-hint');
 const keyboardIcon = document.getElementById('keyboard-icon');
 const nextKeyHint = document.getElementById('next-key-hint');
@@ -119,7 +117,11 @@ function createVirtualKeyboard() {
             `;
             keyButton.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                keyButton.classList.add('touched');
                 handleKeyPress({ key });
+            });
+            keyButton.addEventListener('touchend', () => {
+                keyButton.classList.remove('touched');
             });
             rowDiv.appendChild(keyButton);
         });
@@ -139,21 +141,30 @@ function recreateKeyboard() {
 }
 
 function toggleVirtualKeyboard(show) {
-    if (!virtualKeyboard.container) {
+    if (!virtualKeyboard.container && show) {
         createVirtualKeyboard();
     }
-    virtualKeyboard.visible = show;
-    virtualKeyboard.container.style.display = show ? 'block' : 'none';
-    
-    if (show) {
-        document.body.classList.add('keyboard-visible');
-    } else {
-        document.body.classList.remove('keyboard-visible');
+    if (virtualKeyboard.container) {
+        virtualKeyboard.visible = show;
+        virtualKeyboard.container.style.display = show ? 'block' : 'none';
+        
+        if (show) {
+            document.body.classList.add('keyboard-visible');
+            // Force reflow to ensure keyboard appears
+            virtualKeyboard.container.offsetHeight;
+        } else {
+            document.body.classList.remove('keyboard-visible');
+        }
     }
 }
 
 function isMobileDevice() {
-    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+    return (
+        typeof window.orientation !== "undefined" ||
+        navigator.userAgent.indexOf('IEMobile') !== -1 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.matchMedia("(max-width: 768px)").matches
+    );
 }
 
 function showTypingStarted() {
@@ -322,6 +333,10 @@ document.addEventListener('touchstart', (e) => {
     if (!gameState.hasStartedTyping) {
         e.preventDefault();
         showTypingStarted();
+        toggleVirtualKeyboard(true);
+    }
+    // Force show keyboard on any touch if it's hidden
+    if (isMobileDevice() && (!virtualKeyboard.visible || !virtualKeyboard.container)) {
         toggleVirtualKeyboard(true);
     }
 }, { passive: false });
