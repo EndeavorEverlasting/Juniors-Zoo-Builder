@@ -1,21 +1,19 @@
-// Add this at the start of init.js
-if (typeof window.gameState === 'undefined') {
-    window.gameState = {
-        currency: 100,
-        buildings: {
-            cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },
-            habitat: { count: 0, cost: 250, word: 'HABITAT', income: 2 },
-            safari: { count: 0, cost: 500, word: 'SAFARI', income: 5 }
-        },
-        currentWord: '',
-        typingProgress: '',
-        hasStartedTyping: false,
-        buildingGrid: [],
-        wrongChar: null,
-        gridSize: { rows: 3, cols: 8 },
-        nextGridPos: { row: 0, col: 0 }
-    };
-}
+// At the very start of init.js, before anything else
+window.gameState = {
+    currency: 100,
+    buildings: {
+        cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },
+        habitat: { count: 0, cost: 250, word: 'HABITAT', income: 2 },
+        safari: { count: 0, cost: 500, word: 'SAFARI', income: 5 }
+    },
+    currentWord: '',
+    typingProgress: '',
+    hasStartedTyping: false,
+    buildingGrid: [],
+    wrongChar: null,
+    gridSize: { rows: 3, cols: 8 },
+    nextGridPos: { row: 0, col: 0 }
+};
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -47,4 +45,6 @@ window.addEventListener('resize', resizeCanvas);
 // Initialize audio context
 window.addEventListener('DOMContentLoaded', () => {
     initAudioContext();
+    // Start game animation loop
+    requestAnimationFrame(gameLoop);
 });

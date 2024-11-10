@@ -37,24 +37,29 @@ function isMobileDevice() {
 }
 
 function showTypingStarted() {
-    window.gameState.hasStartedTyping = true;
-    typingHint.style.display = 'none';
-    keyboardIcon.classList.add('visible');
-    nextKeyHint.classList.add('visible');
-    initAudioContext();
-    if (isMobileDevice()) {
-        toggleVirtualKeyboard(true);
+    if (!window.gameState.hasStartedTyping) {
+        window.gameState.hasStartedTyping = true;
+        typingHint.style.display = 'none';
+        keyboardIcon.classList.add('visible');
+        nextKeyHint.classList.add('visible');
+        
+        if (isMobileDevice()) {
+            toggleVirtualKeyboard(true);
+        }
+        
+        // Start game animation loop
+        requestAnimationFrame(gameLoop);
     }
 }
 
 function handleKeyPress(event) {
-    const key = event.key.toUpperCase();
-    
     if (!window.gameState.hasStartedTyping) {
         showTypingStarted();
         return;
     }
-
+    
+    const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
+    
     // Handle backspace
     if (key === 'BACKSPACE') {
         if (window.gameState.typingProgress.length > 0) {
@@ -217,21 +222,6 @@ function updateDisplay() {
         typingHint.textContent = 'Press any key to start building!';
         typingHint.classList.add('pulse');
     }
-}
-
-function updateAvailableBuildings() {
-    const buildingItems = document.querySelectorAll('.building-item');
-    buildingItems.forEach(item => {
-        const wordElement = item.querySelector('.typing-word');
-        if (wordElement) {
-            const word = wordElement.textContent;
-            if (window.gameState.currentWord === word) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        }
-    });
 }
 
 // Event Listeners
