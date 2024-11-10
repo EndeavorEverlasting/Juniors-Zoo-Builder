@@ -75,23 +75,62 @@ function drawWeather() {
     }
 }
 
+function drawBuildingBase(building) {
+    // Draw isometric base shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.moveTo(-BUILDING_SIZE/2, BUILDING_SIZE/4);
+    ctx.lineTo(0, BUILDING_SIZE/2);
+    ctx.lineTo(BUILDING_SIZE/2, BUILDING_SIZE/4);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawAnimalWithAnimation(building) {
+    const time = Date.now() * 0.001;
+    const bounceHeight = Math.sin(time * 2) * 5;
+    const swayAmount = Math.sin(time) * 3;
+    
+    ctx.save();
+    ctx.translate(0, bounceHeight);
+    ctx.rotate(swayAmount * Math.PI / 180);
+    
+    if (building.animal) {
+        ctx.drawImage(building.animal, 
+            -BUILDING_SIZE * 0.25, -BUILDING_SIZE * 0.25,
+            BUILDING_SIZE * 0.5, BUILDING_SIZE * 0.5);
+    }
+    
+    ctx.restore();
+}
+
 function drawBuildings() {
     gameState.buildingGrid.forEach(building => {
-        // Draw building
+        ctx.save();
+        // Apply isometric transformation
+        ctx.translate(building.x + BUILDING_SIZE/2, building.y + BUILDING_SIZE/2);
+        ctx.transform(1, 0.5, -1, 0.5, 0, 0);
+        ctx.scale(building.scale, building.scale);
+        
+        // Draw building with shadow
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 5;
+        
+        // Draw building base
+        drawBuildingBase(building);
+        
+        // Draw the building
         const buildingImg = new Image();
         buildingImg.src = `/static/assets/${building.type}.svg`;
-        ctx.save();
-        ctx.globalAlpha = building.opacity;
-        ctx.translate(building.x, building.y);
-        ctx.scale(building.scale, building.scale);
-        ctx.drawImage(buildingImg, 0, 0, BUILDING_SIZE, BUILDING_SIZE);
+        ctx.drawImage(buildingImg, -BUILDING_SIZE/2, -BUILDING_SIZE/2, BUILDING_SIZE, BUILDING_SIZE);
         
-        // Draw animal
+        // Draw animals with enhanced animations
         if (building.animal) {
-            ctx.drawImage(building.animal, 
-                BUILDING_SIZE * 0.25, BUILDING_SIZE * 0.25,
-                BUILDING_SIZE * 0.5, BUILDING_SIZE * 0.5);
+            drawAnimalWithAnimation(building);
         }
+        
         ctx.restore();
         
         // Update animation properties
@@ -113,11 +152,13 @@ function addVisitor(x, y) {
         targetX: x + (Math.random() * 200 - 100),
         targetY: y + (Math.random() * 200 - 100),
         img: visitorImg,
-        happiness: Math.random() > 0.5
+        happiness: Math.random() > 0.5,
+        bounceOffset: Math.random() * Math.PI * 2
     });
 }
 
 function updateVisitors() {
+    const time = Date.now() * 0.001;
     visitors.forEach(visitor => {
         const dx = visitor.targetX - visitor.x;
         const dy = visitor.targetY - visitor.y;
@@ -131,6 +172,9 @@ function updateVisitors() {
             visitor.targetY = visitor.y + (Math.random() * 200 - 100);
             visitor.happiness = Math.random() > 0.3;
         }
+        
+        // Add bouncing animation
+        visitor.y += Math.sin(time * 3 + visitor.bounceOffset) * 0.5;
     });
 }
 
@@ -138,6 +182,10 @@ function drawVisitors() {
     visitors.forEach(visitor => {
         ctx.save();
         ctx.translate(visitor.x, visitor.y);
+        
+        // Apply isometric transformation for consistent style
+        ctx.transform(1, 0.5, -1, 0.5, 0, 0);
+        
         ctx.drawImage(visitor.img, -10, -15, 20, 30);
         
         if (visitor.happiness) {
@@ -160,7 +208,8 @@ function createHappinessParticle(x, y) {
         size: 10,
         alpha: 1,
         type: 'heart',
-        velocity: { x: (Math.random() - 0.5) * 2, y: -2 }
+        velocity: { x: (Math.random() - 0.5) * 2, y: -2 },
+        rotation: Math.random() * Math.PI * 2
     });
 }
 
@@ -170,6 +219,7 @@ function updateParticles() {
         particle.y += particle.velocity.y;
         particle.velocity.y += 0.1;
         particle.alpha -= 0.02;
+        particle.rotation += 0.1;
         return particle.alpha > 0;
     });
 }
@@ -178,20 +228,23 @@ function drawParticles() {
     activeParticles.forEach(particle => {
         ctx.save();
         ctx.globalAlpha = particle.alpha;
-        ctx.fillStyle = '#FF69B4';
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(particle.rotation);
         
         if (particle.type === 'heart') {
+            ctx.fillStyle = '#FF69B4';
             ctx.beginPath();
-            ctx.moveTo(particle.x, particle.y);
+            ctx.moveTo(0, 0);
+            const size = particle.size;
             ctx.bezierCurveTo(
-                particle.x - particle.size/2, particle.y - particle.size/2,
-                particle.x - particle.size, particle.y,
-                particle.x, particle.y + particle.size/2
+                -size/2, -size/2,
+                -size, 0,
+                0, size/2
             );
             ctx.bezierCurveTo(
-                particle.x + particle.size, particle.y,
-                particle.x + particle.size/2, particle.y - particle.size/2,
-                particle.x, particle.y
+                size, 0,
+                size/2, -size/2,
+                0, 0
             );
             ctx.fill();
         }
@@ -221,14 +274,14 @@ function animateBuilding(buildingType, x, y) {
         opacity: 0,
         animal: animalImg,
         happiness: 100,
-        lastParticleTime: 0
+        lastParticleTime: 0,
+        rotation: 0
     };
     
     gameState.buildingGrid.push(building);
     addVisitor(x + BUILDING_SIZE/2, y + BUILDING_SIZE);
 }
 
-// Update the game loop to include new animations
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
@@ -257,3 +310,4 @@ function gameLoop() {
 
 // Initialize weather when the game starts
 initWeather();
+gameLoop();

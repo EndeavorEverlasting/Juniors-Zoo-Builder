@@ -6,6 +6,27 @@ import random
 
 app = Flask(__name__)
 
+VERSION_HISTORY = {
+    '1.0.0': {
+        'date': '2024-11-10',
+        'changes': [
+            'Initial game implementation',
+            'Basic typing mechanics',
+            'Simple building placement'
+        ]
+    },
+    '1.1.0': {
+        'date': '2024-11-10',
+        'changes': [
+            'Fixed input handling',
+            'Added proper typing feedback',
+            'Implemented isometric 3D view',
+            'Enhanced animal animations',
+            'Improved mobile support with virtual keyboard'
+        ]
+    }
+}
+
 # Configuration
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "dev_key"
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
@@ -117,7 +138,8 @@ def game():
     return render_template('game.html', 
                          player=player,
                          offline_earnings=offline_earnings,
-                         available_rewards=available_rewards)
+                         available_rewards=available_rewards,
+                         version=list(VERSION_HISTORY.keys())[-1])
 
 @app.route('/get_game_state')
 def get_game_state():

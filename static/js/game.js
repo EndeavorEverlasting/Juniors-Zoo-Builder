@@ -4,13 +4,13 @@ const KEYBOARD_LAYOUTS = {
         'QWERTYUIOP'.split(''),
         'ASDFGHJKL'.split(''),
         'ZXCVBNM'.split(''),
-        ['BACKSPACE', 'RETURN']  // Add new row
+        ['BACKSPACE', 'RETURN']
     ],
     ABC: [
         'ABCDEFGHI'.split(''),
         'JKLMNOPQR'.split(''),
         'STUVWXYZ'.split(''),
-        ['BACKSPACE', 'RETURN']  // Add new row
+        ['BACKSPACE', 'RETURN']
     ]
 };
 
@@ -47,6 +47,73 @@ let virtualKeyboard = {
     visible: false,
     container: null
 };
+
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function showTypingStarted() {
+    gameState.hasStartedTyping = true;
+    typingHint.style.display = 'none';
+    keyboardIcon.classList.add('visible');
+    nextKeyHint.classList.add('visible');
+    initAudioContext();
+    if (isMobileDevice()) {
+        toggleVirtualKeyboard(true);
+    }
+}
+
+function toggleVirtualKeyboard(show) {
+    if (!virtualKeyboard.container) {
+        createVirtualKeyboard();
+    }
+    virtualKeyboard.visible = show;
+    virtualKeyboard.container.style.display = show ? 'block' : 'none';
+    if (show) {
+        document.body.classList.add('has-virtual-keyboard');
+    } else {
+        document.body.classList.remove('has-virtual-keyboard');
+    }
+}
+
+function createVirtualKeyboard() {
+    virtualKeyboard.container = document.createElement('div');
+    virtualKeyboard.container.className = 'virtual-keyboard';
+    updateVirtualKeyboard();
+    document.body.appendChild(virtualKeyboard.container);
+}
+
+function updateVirtualKeyboard() {
+    if (!virtualKeyboard.container) return;
+    
+    const layout = KEYBOARD_LAYOUTS[currentKeyboardLayout];
+    virtualKeyboard.container.innerHTML = `
+        <button class="keyboard-layout-toggle" onclick="toggleKeyboardLayout()">
+            Switch to ${currentKeyboardLayout === 'QWERTY' ? 'ABC' : 'QWERTY'}
+        </button>
+        <div class="keyboard-layout">
+            ${layout.map((row, rowIndex) => `
+                <div class="keyboard-row">
+                    ${row.map(key => `
+                        <button class="keyboard-key ${key.length > 1 ? 'special-key' : ''}"
+                                onclick="handleVirtualKeyPress('${key}')">
+                            ${key}
+                        </button>
+                    `).join('')}
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function toggleKeyboardLayout() {
+    currentKeyboardLayout = currentKeyboardLayout === 'QWERTY' ? 'ABC' : 'QWERTY';
+    updateVirtualKeyboard();
+}
+
+function handleVirtualKeyPress(key) {
+    handleKeyPress({ key: key, preventDefault: () => {} });
+}
 
 function handleWordCompletion() {
     for (const [buildingType, building] of Object.entries(gameState.buildings)) {
@@ -101,7 +168,10 @@ function handleKeyPress(event) {
         initAudioContext();
     }
 
-    showTypingStarted();
+    if (!gameState.hasStartedTyping) {
+        showTypingStarted();
+        return;
+    }
     
     // Handle special keys
     if (key === 'BACKSPACE') {
@@ -149,4 +219,56 @@ function handleKeyPress(event) {
     updateAvailableBuildings();
 }
 
-[Rest of the game.js file remains unchanged...]
+// Event Listeners
+document.addEventListener('keydown', handleKeyPress);
+
+document.addEventListener('touchstart', (e) => {
+    if (!gameState.hasStartedTyping) {
+        e.preventDefault();
+        showTypingStarted();
+        toggleVirtualKeyboard(true);
+    }
+}, { passive: false });
+
+function updateDisplay() {
+    if (gameState.currentWord) {
+        typingHint.textContent = `Type: ${gameState.currentWord}`;
+        typingHint.innerHTML = gameState.currentWord.split('').map((char, index) => {
+            if (index < gameState.typingProgress.length) {
+                return `<span class="correct">${char}</span>`;
+            } else if (index === gameState.typingProgress.length) {
+                return `<span class="current">${char}</span>`;
+            }
+            return `<span class="remaining">${char}</span>`;
+        }).join('');
+        
+        if (gameState.wrongChar) {
+            typingHint.classList.add('shake');
+            setTimeout(() => typingHint.classList.remove('shake'), 500);
+        }
+    } else {
+        typingHint.textContent = 'Press any key to start building!';
+        typingHint.classList.add('pulse');
+    }
+}
+
+function updateAvailableBuildings() {
+    const buildingItems = document.querySelectorAll('.building-item');
+    buildingItems.forEach(item => {
+        const wordElement = item.querySelector('.typing-word');
+        if (wordElement) {
+            const word = wordElement.textContent;
+            if (gameState.currentWord === word) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        }
+    });
+}
+
+// Initialize game
+updateDisplay();
+if (isMobileDevice()) {
+    createVirtualKeyboard();
+}
