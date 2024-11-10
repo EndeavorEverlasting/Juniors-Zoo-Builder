@@ -1,8 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Initialize game state
-const gameState = {
+// Initialize game state in window scope for global access
+window.gameState = {
     currency: 100,
     buildings: {
         cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },

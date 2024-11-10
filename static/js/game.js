@@ -37,13 +37,66 @@ function isMobileDevice() {
 }
 
 function showTypingStarted() {
-    gameState.hasStartedTyping = true;
+    window.gameState.hasStartedTyping = true;
     typingHint.style.display = 'none';
     keyboardIcon.classList.add('visible');
     nextKeyHint.classList.add('visible');
     initAudioContext();
     if (isMobileDevice()) {
         toggleVirtualKeyboard(true);
+    }
+}
+
+function handleKeyPress(event) {
+    const key = event.key.toUpperCase();
+    
+    if (!window.gameState.hasStartedTyping) {
+        showTypingStarted();
+        return;
+    }
+
+    // Handle backspace
+    if (key === 'BACKSPACE') {
+        if (window.gameState.typingProgress.length > 0) {
+            window.gameState.typingProgress = window.gameState.typingProgress.slice(0, -1);
+            playWrongKeySound();
+            updateDisplay();
+        }
+        return;
+    }
+
+    // Only process alphabetic keys
+    if (!/^[A-Z]$/.test(key)) {
+        return;
+    }
+
+    if (!window.gameState.currentWord) {
+        // Start new word
+        for (const [buildingType, building] of Object.entries(window.gameState.buildings)) {
+            if (building.word.startsWith(key) && window.gameState.currency >= building.cost) {
+                window.gameState.currentWord = building.word;
+                window.gameState.typingProgress = key;
+                playCorrectKeySound();
+                updateDisplay();
+                break;
+            }
+        }
+    } else {
+        // Continue current word
+        const nextChar = window.gameState.currentWord[window.gameState.typingProgress.length];
+        if (key === nextChar) {
+            window.gameState.typingProgress += key;
+            playCorrectKeySound();
+            
+            if (window.gameState.typingProgress === window.gameState.currentWord) {
+                handleWordCompletion();
+            }
+        } else {
+            playWrongKeySound();
+            typingHint.classList.add('shake');
+            setTimeout(() => typingHint.classList.remove('shake'), 500);
+        }
+        updateDisplay();
     }
 }
 
@@ -100,28 +153,28 @@ function handleVirtualKeyPress(key) {
 }
 
 function handleWordCompletion() {
-    for (const [buildingType, building] of Object.entries(gameState.buildings)) {
-        if (building.word === gameState.currentWord) {
-            if (gameState.currency >= building.cost) {
-                gameState.currency -= building.cost;
+    for (const [buildingType, building] of Object.entries(window.gameState.buildings)) {
+        if (building.word === window.gameState.currentWord) {
+            if (window.gameState.currency >= building.cost) {
+                window.gameState.currency -= building.cost;
                 building.count++;
                 playBuildingComplete();
                 
                 const gridPos = {
-                    x: (canvas.width - (gameState.gridSize.cols * GRID_CELL_SIZE)) / 2 + 
-                       (gameState.nextGridPos.col * GRID_CELL_SIZE),
-                    y: canvas.height * 0.7 - (gameState.nextGridPos.row * GRID_CELL_SIZE)
+                    x: (canvas.width - (window.gameState.gridSize.cols * GRID_CELL_SIZE)) / 2 + 
+                       (window.gameState.nextGridPos.col * GRID_CELL_SIZE),
+                    y: canvas.height * 0.7 - (window.gameState.nextGridPos.row * GRID_CELL_SIZE)
                 };
                 
                 animateBuilding(buildingType, gridPos.x, gridPos.y);
                 
                 // Update grid position
-                gameState.nextGridPos.col++;
-                if (gameState.nextGridPos.col >= gameState.gridSize.cols) {
-                    gameState.nextGridPos.col = 0;
-                    gameState.nextGridPos.row++;
-                    if (gameState.nextGridPos.row >= gameState.gridSize.rows) {
-                        gameState.nextGridPos.row = 0;
+                window.gameState.nextGridPos.col++;
+                if (window.gameState.nextGridPos.col >= window.gameState.gridSize.cols) {
+                    window.gameState.nextGridPos.col = 0;
+                    window.gameState.nextGridPos.row++;
+                    if (window.gameState.nextGridPos.row >= window.gameState.gridSize.rows) {
+                        window.gameState.nextGridPos.row = 0;
                     }
                 }
                 
@@ -132,100 +185,31 @@ function handleWordCompletion() {
                     },
                     body: JSON.stringify({
                         attraction_type: buildingType,
-                        currency: gameState.currency
+                        currency: window.gameState.currency
                     })
                 });
             }
             break;
         }
     }
-    gameState.currentWord = '';
-    gameState.typingProgress = '';
-    gameState.wrongChar = null;
+    window.gameState.currentWord = '';
+    window.gameState.typingProgress = '';
+    window.gameState.wrongChar = null;
     updateDisplay();
 }
-
-function handleKeyPress(event) {
-    const key = event.key.toUpperCase();
-    
-    if (typeof audioContext === 'undefined') {
-        initAudioContext();
-    }
-
-    if (!gameState.hasStartedTyping) {
-        showTypingStarted();
-        return;
-    }
-    
-    // Handle special keys
-    if (key === 'BACKSPACE') {
-        if (gameState.typingProgress.length > 0) {
-            gameState.typingProgress = gameState.typingProgress.slice(0, -1);
-            playWrongKeySound();
-        }
-        return;
-    } else if (key === 'RETURN') {
-        if (gameState.typingProgress === gameState.currentWord) {
-            handleWordCompletion();
-        }
-        return;
-    }
-    
-    if (!gameState.currentWord) {
-        for (const [buildingType, building] of Object.entries(gameState.buildings)) {
-            if (building.word.startsWith(key) && gameState.currency >= building.cost) {
-                gameState.currentWord = building.word;
-                gameState.typingProgress = key;
-                gameState.wrongChar = null;
-                playCorrectKeySound();
-                break;
-            }
-        }
-    } else {
-        const nextChar = gameState.currentWord[gameState.typingProgress.length];
-        if (key === nextChar) {
-            gameState.typingProgress += key;
-            gameState.wrongChar = null;
-            playCorrectKeySound();
-            
-            if (gameState.typingProgress === gameState.currentWord) {
-                handleWordCompletion();
-            }
-        } else {
-            gameState.wrongChar = key;
-            playWrongKeySound();
-            typingHint.classList.add('shake');
-            setTimeout(() => typingHint.classList.remove('shake'), 500);
-        }
-    }
-    
-    updateDisplay();
-    updateAvailableBuildings();
-}
-
-// Event Listeners
-document.addEventListener('keydown', handleKeyPress);
-
-document.addEventListener('touchstart', (e) => {
-    if (!gameState.hasStartedTyping) {
-        e.preventDefault();
-        showTypingStarted();
-        toggleVirtualKeyboard(true);
-    }
-}, { passive: false });
 
 function updateDisplay() {
-    if (gameState.currentWord) {
-        typingHint.innerHTML = gameState.currentWord.split('').map((char, index) => {
-            if (index < gameState.typingProgress.length) {
+    if (window.gameState.currentWord) {
+        typingHint.innerHTML = window.gameState.currentWord.split('').map((char, index) => {
+            if (index < window.gameState.typingProgress.length) {
                 return `<span class="correct">${char}</span>`;
-            } else if (index === gameState.typingProgress.length) {
+            } else if (index === window.gameState.typingProgress.length) {
                 return `<span class="current">${char}</span>`;
             }
             return `<span class="remaining">${char}</span>`;
         }).join('');
         
-        if (gameState.wrongChar) {
+        if (window.gameState.wrongChar) {
             typingHint.classList.add('shake');
             setTimeout(() => typingHint.classList.remove('shake'), 500);
         }
@@ -241,7 +225,7 @@ function updateAvailableBuildings() {
         const wordElement = item.querySelector('.typing-word');
         if (wordElement) {
             const word = wordElement.textContent;
-            if (gameState.currentWord === word) {
+            if (window.gameState.currentWord === word) {
                 item.classList.add('active');
             } else {
                 item.classList.remove('active');
@@ -249,6 +233,17 @@ function updateAvailableBuildings() {
         }
     });
 }
+
+// Event Listeners
+document.addEventListener('keydown', handleKeyPress);
+
+document.addEventListener('touchstart', (e) => {
+    if (!window.gameState.hasStartedTyping) {
+        e.preventDefault();
+        showTypingStarted();
+        toggleVirtualKeyboard(true);
+    }
+}, { passive: false });
 
 // Initialize game
 updateDisplay();
