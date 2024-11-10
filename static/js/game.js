@@ -50,16 +50,16 @@ function showTypingStarted() {
 }
 
 function handleKeyPress(event) {
+    const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
+    console.log('Key pressed:', key);
+    
     if (!window.gameState.hasStartedTyping) {
         showTypingStarted();
         return;
     }
-    
-    const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
-    console.log('Key pressed:', key); // Add debug logging
-    
+
     // Handle backspace
-    if (key === 'BACKSPACE') {
+    if (key === 'BACKSPACE' || key === 'DELETE') {
         if (window.gameState.typingProgress.length > 0) {
             window.gameState.typingProgress = window.gameState.typingProgress.slice(0, -1);
             playWrongKeySound();
@@ -73,7 +73,6 @@ function handleKeyPress(event) {
         return;
     }
 
-    // Debug logging
     console.log('Current word:', window.gameState.currentWord);
     console.log('Typing progress:', window.gameState.typingProgress);
 
@@ -85,6 +84,7 @@ function handleKeyPress(event) {
                 window.gameState.typingProgress = key;
                 playCorrectKeySound();
                 updateDisplay();
+                console.log('Started new word:', window.gameState.currentWord);
                 break;
             }
         }
@@ -94,14 +94,19 @@ function handleKeyPress(event) {
         if (key === nextChar) {
             window.gameState.typingProgress += key;
             playCorrectKeySound();
+            console.log('Added character:', key);
             
             if (window.gameState.typingProgress === window.gameState.currentWord) {
+                console.log('Word completed:', window.gameState.currentWord);
                 handleWordCompletion();
+            } else {
+                updateDisplay();
             }
         } else {
             playWrongKeySound();
             window.gameState.wrongChar = key;
             updateDisplay();
+            console.log('Wrong character:', key);
         }
     }
 }
@@ -226,7 +231,13 @@ function updateDisplay() {
 }
 
 // Event Listeners
-document.addEventListener('keydown', handleKeyPress);
+window.addEventListener('keydown', (e) => {
+    // Prevent scrolling with spacebar
+    if (e.key === ' ') {
+        e.preventDefault();
+    }
+    handleKeyPress(e);
+});
 
 document.addEventListener('touchstart', (e) => {
     if (!window.gameState.hasStartedTyping) {

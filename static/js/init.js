@@ -39,13 +39,11 @@ function resizeCanvas() {
 }
 
 // Initial setup
-window.addEventListener('DOMContentLoaded', () => {
-    // Initialize game components
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Game initialized with state:', window.gameState);
     initAudioContext();
     resizeCanvas();
     updateDisplay();
-    
-    // Start animation loop only after everything is initialized
     requestAnimationFrame(gameLoop);
 });
 
