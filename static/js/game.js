@@ -27,22 +27,6 @@ const GRID_CELL_SIZE = 80;
 const BUILDING_SIZE = 60;
 
 let currentKeyboardLayout = 'QWERTY';
-let gameState = {
-    currency: 100,
-    buildings: {
-        cage: { count: 0, cost: 100, word: 'CAGE', income: 1 },
-        habitat: { count: 0, cost: 250, word: 'HABITAT', income: 2 },
-        safari: { count: 0, cost: 500, word: 'SAFARI', income: 5 }
-    },
-    currentWord: '',
-    typingProgress: '',
-    hasStartedTyping: false,
-    buildingGrid: [],
-    wrongChar: null,
-    gridSize: { rows: 3, cols: 8 },
-    nextGridPos: { row: 0, col: 0 }
-};
-
 let virtualKeyboard = {
     visible: false,
     container: null
@@ -232,7 +216,6 @@ document.addEventListener('touchstart', (e) => {
 
 function updateDisplay() {
     if (gameState.currentWord) {
-        typingHint.textContent = `Type: ${gameState.currentWord}`;
         typingHint.innerHTML = gameState.currentWord.split('').map((char, index) => {
             if (index < gameState.typingProgress.length) {
                 return `<span class="correct">${char}</span>`;
