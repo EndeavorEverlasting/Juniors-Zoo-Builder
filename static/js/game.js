@@ -46,9 +46,6 @@ function showTypingStarted() {
         if (isMobileDevice()) {
             toggleVirtualKeyboard(true);
         }
-        
-        // Start game animation loop
-        requestAnimationFrame(gameLoop);
     }
 }
 
@@ -59,6 +56,7 @@ function handleKeyPress(event) {
     }
     
     const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
+    console.log('Key pressed:', key); // Add debug logging
     
     // Handle backspace
     if (key === 'BACKSPACE') {
@@ -74,6 +72,10 @@ function handleKeyPress(event) {
     if (!/^[A-Z]$/.test(key)) {
         return;
     }
+
+    // Debug logging
+    console.log('Current word:', window.gameState.currentWord);
+    console.log('Typing progress:', window.gameState.typingProgress);
 
     if (!window.gameState.currentWord) {
         // Start new word
@@ -98,10 +100,9 @@ function handleKeyPress(event) {
             }
         } else {
             playWrongKeySound();
-            typingHint.classList.add('shake');
-            setTimeout(() => typingHint.classList.remove('shake'), 500);
+            window.gameState.wrongChar = key;
+            updateDisplay();
         }
-        updateDisplay();
     }
 }
 

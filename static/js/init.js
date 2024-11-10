@@ -39,12 +39,15 @@ function resizeCanvas() {
 }
 
 // Initial setup
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-// Initialize audio context
 window.addEventListener('DOMContentLoaded', () => {
+    // Initialize game components
     initAudioContext();
-    // Start game animation loop
+    resizeCanvas();
+    updateDisplay();
+    
+    // Start animation loop only after everything is initialized
     requestAnimationFrame(gameLoop);
 });
+
+// Handle window resize
+window.addEventListener('resize', resizeCanvas);
