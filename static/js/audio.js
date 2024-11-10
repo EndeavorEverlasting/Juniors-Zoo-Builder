@@ -1,8 +1,14 @@
-let audioContext;
+let audioContext = null;
 
 function initAudioContext() {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        // Test sound to verify audio is working
+        playCorrectKeySound();
+    } catch (e) {
+        console.error('Audio initialization failed:', e);
     }
 }
 
