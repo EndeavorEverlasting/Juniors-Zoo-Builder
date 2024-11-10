@@ -12,7 +12,11 @@ window.gameState = {
     buildingGrid: [],
     wrongChar: null,
     gridSize: { rows: 3, cols: 8 },
-    nextGridPos: { row: 0, col: 0 }
+    nextGridPos: { row: 0, col: 0 },
+    uiState: {
+        typingHintVisible: true,
+        keyboardVisible: false
+    }
 };
 
 const canvas = document.getElementById('gameCanvas');

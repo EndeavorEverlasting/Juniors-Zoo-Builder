@@ -39,6 +39,7 @@ function isMobileDevice() {
 function showTypingStarted() {
     if (!window.gameState.hasStartedTyping) {
         window.gameState.hasStartedTyping = true;
+        window.gameState.uiState.typingHintVisible = false;
         typingHint.style.display = 'none';
         keyboardIcon.classList.add('visible');
         nextKeyHint.classList.add('visible');
@@ -46,6 +47,7 @@ function showTypingStarted() {
         if (isMobileDevice()) {
             toggleVirtualKeyboard(true);
         }
+        requestAnimationFrame(gameLoop);  // Ensure animation loop is running
     }
 }
 
@@ -56,6 +58,12 @@ function handleKeyPress(event) {
     if (!window.gameState.hasStartedTyping) {
         showTypingStarted();
         return;
+    }
+
+    // Reset UI state if needed
+    if (window.gameState.uiState.typingHintVisible) {
+        window.gameState.uiState.typingHintVisible = false;
+        typingHint.style.display = 'none';
     }
 
     // Handle backspace
@@ -117,6 +125,8 @@ function toggleVirtualKeyboard(show) {
     }
     virtualKeyboard.visible = show;
     virtualKeyboard.container.style.display = show ? 'block' : 'none';
+    window.gameState.uiState.keyboardVisible = show;
+    
     if (show) {
         document.body.classList.add('has-virtual-keyboard');
     } else {

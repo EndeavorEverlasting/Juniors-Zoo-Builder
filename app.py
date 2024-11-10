@@ -24,6 +24,26 @@ VERSION_HISTORY = {
             'Enhanced animal animations',
             'Improved mobile support with virtual keyboard'
         ]
+    },
+    '1.2.0': {
+        'date': '2024-11-10',
+        'changes': [
+            'Added map system with sectors',
+            'Implemented save/load system',
+            'Added reward chests and boosters',
+            'Enhanced visual feedback',
+            'Fixed keyboard input issues'
+        ]
+    },
+    '2.0.0': {
+        'date': '2024-11-15',
+        'planned_changes': [
+            'Advanced 3D isometric view',
+            'Enhanced particle effects and animations',
+            'Improved educational mechanics',
+            'Achievement system',
+            'Teacher/Parent dashboard'
+        ]
     }
 }
 
