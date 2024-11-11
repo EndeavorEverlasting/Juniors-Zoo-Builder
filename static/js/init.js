@@ -1,4 +1,4 @@
-// At the very start of init.js, before anything else
+// Initialize game state before DOM content loaded
 window.gameState = {
     currency: 100,
     buildings: {
@@ -8,15 +8,11 @@ window.gameState = {
     },
     currentWord: '',
     typingProgress: '',
-    hasStartedTyping: false,
+    hasStartedTyping: true, // Start in active state
     buildingGrid: [],
     wrongChar: null,
     gridSize: { rows: 3, cols: 8 },
-    nextGridPos: { row: 0, col: 0 },
-    uiState: {
-        typingHintVisible: true,
-        keyboardVisible: false
-    }
+    nextGridPos: { row: 0, col: 0 }
 };
 
 const canvas = document.getElementById('gameCanvas');

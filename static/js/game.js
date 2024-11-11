@@ -15,12 +15,9 @@ const KEYBOARD_LAYOUTS = {
 };
 
 // Get DOM elements
-const typingHint = document.getElementById('typing-hint');
 const keyboardIcon = document.getElementById('keyboard-icon');
 const nextKeyHint = document.getElementById('next-key-hint');
 const nextKey = document.getElementById('next-key');
-const floatingGuide = document.getElementById('floating-guide');
-const bounceArrow = document.getElementById('bounce-arrow');
 
 // Animation properties
 const GRID_CELL_SIZE = 80;
@@ -36,36 +33,10 @@ function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-function showTypingStarted() {
-    if (!window.gameState.hasStartedTyping) {
-        window.gameState.hasStartedTyping = true;
-        window.gameState.uiState.typingHintVisible = false;
-        typingHint.style.display = 'none';
-        keyboardIcon.classList.add('visible');
-        nextKeyHint.classList.add('visible');
-        
-        if (isMobileDevice()) {
-            toggleVirtualKeyboard(true);
-        }
-        requestAnimationFrame(gameLoop);  // Ensure animation loop is running
-    }
-}
-
 function handleKeyPress(event) {
     const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
     console.log('Key pressed:', key);
     
-    if (!window.gameState.hasStartedTyping) {
-        showTypingStarted();
-        return;
-    }
-
-    // Reset UI state if needed
-    if (window.gameState.uiState.typingHintVisible) {
-        window.gameState.uiState.typingHintVisible = false;
-        typingHint.style.display = 'none';
-    }
-
     // Handle backspace
     if (key === 'BACKSPACE' || key === 'DELETE') {
         if (window.gameState.typingProgress.length > 0) {
@@ -81,9 +52,6 @@ function handleKeyPress(event) {
         return;
     }
 
-    console.log('Current word:', window.gameState.currentWord);
-    console.log('Typing progress:', window.gameState.typingProgress);
-
     if (!window.gameState.currentWord) {
         // Start new word
         for (const [buildingType, building] of Object.entries(window.gameState.buildings)) {
@@ -92,7 +60,6 @@ function handleKeyPress(event) {
                 window.gameState.typingProgress = key;
                 playCorrectKeySound();
                 updateDisplay();
-                console.log('Started new word:', window.gameState.currentWord);
                 break;
             }
         }
@@ -102,10 +69,8 @@ function handleKeyPress(event) {
         if (key === nextChar) {
             window.gameState.typingProgress += key;
             playCorrectKeySound();
-            console.log('Added character:', key);
             
             if (window.gameState.typingProgress === window.gameState.currentWord) {
-                console.log('Word completed:', window.gameState.currentWord);
                 handleWordCompletion();
             } else {
                 updateDisplay();
@@ -114,7 +79,6 @@ function handleKeyPress(event) {
             playWrongKeySound();
             window.gameState.wrongChar = key;
             updateDisplay();
-            console.log('Wrong character:', key);
         }
     }
 }
@@ -125,7 +89,6 @@ function toggleVirtualKeyboard(show) {
     }
     virtualKeyboard.visible = show;
     virtualKeyboard.container.style.display = show ? 'block' : 'none';
-    window.gameState.uiState.keyboardVisible = show;
     
     if (show) {
         document.body.classList.add('has-virtual-keyboard');
@@ -220,29 +183,18 @@ function handleWordCompletion() {
 }
 
 function updateDisplay() {
-    if (window.gameState.currentWord) {
-        typingHint.innerHTML = window.gameState.currentWord.split('').map((char, index) => {
-            if (index < window.gameState.typingProgress.length) {
-                return `<span class="correct">${char}</span>`;
-            } else if (index === window.gameState.typingProgress.length) {
-                return `<span class="current">${char}</span>`;
-            }
-            return `<span class="remaining">${char}</span>`;
-        }).join('');
-        
-        if (window.gameState.wrongChar) {
-            typingHint.classList.add('shake');
-            setTimeout(() => typingHint.classList.remove('shake'), 500);
-        }
-    } else {
-        typingHint.textContent = 'Press any key to start building!';
-        typingHint.classList.add('pulse');
+    nextKey.textContent = window.gameState.currentWord 
+        ? window.gameState.currentWord[window.gameState.typingProgress.length]
+        : 'ANY KEY';
+    
+    if (window.gameState.wrongChar) {
+        nextKeyHint.classList.add('shake');
+        setTimeout(() => nextKeyHint.classList.remove('shake'), 500);
     }
 }
 
 // Event Listeners
 window.addEventListener('keydown', (e) => {
-    // Prevent scrolling with spacebar
     if (e.key === ' ') {
         e.preventDefault();
     }
@@ -250,9 +202,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('touchstart', (e) => {
-    if (!window.gameState.hasStartedTyping) {
-        e.preventDefault();
-        showTypingStarted();
+    if (isMobileDevice()) {
         toggleVirtualKeyboard(true);
     }
 }, { passive: false });
