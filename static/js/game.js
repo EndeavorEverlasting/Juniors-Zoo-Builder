@@ -33,6 +33,27 @@ function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
+function calculateNextGridPosition() {
+    return {
+        x: (canvas.width - (window.gameState.gridSize.cols * GRID_CELL_SIZE)) / 2 + 
+           (window.gameState.nextGridPos.col * GRID_CELL_SIZE),
+        y: canvas.height * 0.7 - (window.gameState.nextGridPos.row * GRID_CELL_SIZE)
+    };
+}
+
+function updateServerProgress(buildingType) {
+    fetch('/update_progress', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            attraction_type: buildingType,
+            currency: window.gameState.currency
+        })
+    });
+}
+
 function handleKeyPress(event) {
     const key = event.key ? event.key.toUpperCase() : event.toUpperCase();
     console.log('Key pressed:', key);
@@ -81,6 +102,67 @@ function handleKeyPress(event) {
             updateDisplay();
         }
     }
+}
+
+function handleWordCompletion() {
+    for (const [buildingType, building] of Object.entries(window.gameState.buildings)) {
+        if (building.word === window.gameState.currentWord) {
+            if (window.gameState.currency >= building.cost) {
+                // Show completion animation
+                const completionMessage = document.createElement('div');
+                completionMessage.className = 'completion-message';
+                completionMessage.textContent = 'Building Complete!';
+                canvas.parentElement.appendChild(completionMessage);
+                setTimeout(() => completionMessage.remove(), 2000);
+                
+                // Update game state
+                window.gameState.currency -= building.cost;
+                building.count++;
+                playBuildingComplete();
+                
+                // Add building to grid
+                const gridPos = calculateNextGridPosition();
+                animateBuilding(buildingType, gridPos.x, gridPos.y);
+                
+                // Update server
+                updateServerProgress(buildingType);
+            }
+            break;
+        }
+    }
+    window.gameState.currentWord = '';
+    window.gameState.typingProgress = '';
+    window.gameState.wrongChar = null;
+    updateDisplay();
+}
+
+function updateDisplay() {
+    // Show current typing progress
+    const typingDisplay = document.createElement('div');
+    typingDisplay.className = 'typing-progress';
+    typingDisplay.innerHTML = window.gameState.typingProgress || '';
+    
+    // Clear previous typing display
+    const oldDisplay = document.querySelector('.typing-progress');
+    if (oldDisplay) oldDisplay.remove();
+    
+    if (window.gameState.typingProgress) {
+        canvas.parentElement.appendChild(typingDisplay);
+    }
+
+    // Update next key hint
+    nextKey.textContent = window.gameState.currentWord 
+        ? window.gameState.currentWord[window.gameState.typingProgress.length]
+        : 'ANY KEY';
+    
+    if (window.gameState.wrongChar) {
+        nextKeyHint.classList.add('shake');
+        setTimeout(() => nextKeyHint.classList.remove('shake'), 500);
+    }
+
+    // Update UI elements
+    nextKeyHint.classList.add('visible');
+    document.getElementById('currency').textContent = window.gameState.currency;
 }
 
 function toggleVirtualKeyboard(show) {
@@ -133,63 +215,12 @@ function toggleKeyboardLayout() {
 }
 
 function handleVirtualKeyPress(key) {
-    handleKeyPress({ key: key, preventDefault: () => {} });
-}
-
-function handleWordCompletion() {
-    for (const [buildingType, building] of Object.entries(window.gameState.buildings)) {
-        if (building.word === window.gameState.currentWord) {
-            if (window.gameState.currency >= building.cost) {
-                window.gameState.currency -= building.cost;
-                building.count++;
-                playBuildingComplete();
-                
-                const gridPos = {
-                    x: (canvas.width - (window.gameState.gridSize.cols * GRID_CELL_SIZE)) / 2 + 
-                       (window.gameState.nextGridPos.col * GRID_CELL_SIZE),
-                    y: canvas.height * 0.7 - (window.gameState.nextGridPos.row * GRID_CELL_SIZE)
-                };
-                
-                animateBuilding(buildingType, gridPos.x, gridPos.y);
-                
-                // Update grid position
-                window.gameState.nextGridPos.col++;
-                if (window.gameState.nextGridPos.col >= window.gameState.gridSize.cols) {
-                    window.gameState.nextGridPos.col = 0;
-                    window.gameState.nextGridPos.row++;
-                    if (window.gameState.nextGridPos.row >= window.gameState.gridSize.rows) {
-                        window.gameState.nextGridPos.row = 0;
-                    }
-                }
-                
-                fetch('/update_progress', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        attraction_type: buildingType,
-                        currency: window.gameState.currency
-                    })
-                });
-            }
-            break;
+    if (key === 'RETURN') {
+        if (window.gameState.typingProgress === window.gameState.currentWord) {
+            handleWordCompletion();
         }
-    }
-    window.gameState.currentWord = '';
-    window.gameState.typingProgress = '';
-    window.gameState.wrongChar = null;
-    updateDisplay();
-}
-
-function updateDisplay() {
-    nextKey.textContent = window.gameState.currentWord 
-        ? window.gameState.currentWord[window.gameState.typingProgress.length]
-        : 'ANY KEY';
-    
-    if (window.gameState.wrongChar) {
-        nextKeyHint.classList.add('shake');
-        setTimeout(() => nextKeyHint.classList.remove('shake'), 500);
+    } else {
+        handleKeyPress({ key: key, preventDefault: () => {} });
     }
 }
 

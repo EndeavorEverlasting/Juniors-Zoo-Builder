@@ -37,36 +37,47 @@
     20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popIn {
+    0% { transform: translate(-50%, -50%) scale(0); }
+    70% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
 .shake {
     animation: shake 0.5s ease-in-out;
 }
 
-.typing-hint {
+.typing-progress {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    animation: fadeIn 0.3s ease-in-out;
     position: absolute;
-    bottom: 20px;
+    top: 50%;
     left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(33, 150, 243, 0.9);
-    padding: 15px 30px;
-    border-radius: 25px;
-    font-size: 1.4rem;
-    color: white;
-    text-align: center;
-    transition: all 0.3s;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
     z-index: 100;
-    animation: pulse 2s infinite;
 }
 
-.typing-hint:hover {
-    transform: translateX(-50%) scale(1.05);
-    background-color: rgba(33, 150, 243, 1);
-}
-
-.typing-hint:active {
-    transform: translateX(-50%) scale(0.95);
+.completion-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    animation: popIn 0.5s ease-out;
+    z-index: 100;
 }
 
 .keyboard-icon {
@@ -97,6 +108,7 @@
     opacity: 0;
     transition: opacity 0.3s;
     pointer-events: none;
+    z-index: 100;
 }
 
 .next-key-hint.visible {
@@ -146,7 +158,6 @@
 }
 
 .keyboard-key {
-    position: relative;
     width: 50px;
     height: 60px;
     border: none;
@@ -168,7 +179,6 @@
     transform: translateY(4px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     background: linear-gradient(145deg, #1976D2, #1565C0);
-    transition: all 0.1s;
 }
 
 .keyboard-key.special-key {
@@ -177,86 +187,20 @@
     background: linear-gradient(145deg, #424242, #212121);
 }
 
-.key-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
-
-.key-letter {
-    position: relative;
-    z-index: 2;
-}
-
-.letter-background {
-    width: 100%;
-    height: 100%;
-    opacity: 0.2;
-}
-
-.letter-shape {
-    fill: white;
-    font-size: 24px;
-    font-family: Arial, sans-serif;
-}
-
-.decoration {
-    fill: none;
-    stroke: white;
-    stroke-width: 2;
-    opacity: 0.3;
-}
-
-.keyboard-layout-toggle {
-    display: block;
-    margin: 0 auto 10px;
-    padding: 8px 16px;
-    background: #424242;
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-size: 0.9rem;
-}
-
 /* Mobile-specific styles */
 @media (max-width: 768px) {
     #gameCanvas {
         height: 40vh;
     }
     
-    .typing-hint {
-        font-size: 1rem;
-        padding: 10px 20px;
-        bottom: 10px;
-    }
-    
-    .building-item {
-        padding: 0.8rem;
-    }
-    
-    .building-item h5 {
-        font-size: 1.2rem;
-    }
-    
-    .virtual-keyboard {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        padding: 10px;
-        z-index: 1000;
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-    }
-
     .keyboard-key {
         width: 40px;
         height: 50px;
         font-size: 1.2rem;
+    }
+    
+    .virtual-keyboard {
+        padding: 10px;
     }
 }
 
